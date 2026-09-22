@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS site_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   site_name TEXT NOT NULL,
   domain TEXT NOT NULL,
-  api_key_hash TEXT NOT NULL UNIQUE,
+  api_key_hash TEXT UNIQUE,
+  key_prefix TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
   brand_knowledge TEXT NOT NULL,
   tone TEXT NOT NULL DEFAULT 'authoritative, actionable, conversion-focused',
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS site_profiles (
 
 -- Indexes for site_profiles
 CREATE INDEX IF NOT EXISTS idx_site_profiles_api_key_hash ON site_profiles (api_key_hash);
+CREATE INDEX IF NOT EXISTS idx_site_profiles_key_prefix ON site_profiles (key_prefix);
 CREATE INDEX IF NOT EXISTS idx_site_profiles_active ON site_profiles (is_active);
 
 -- Automatic updated_at trigger

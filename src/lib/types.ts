@@ -8,7 +8,8 @@ export interface SiteProfile {
   id: string;
   site_name: string;
   domain: string;
-  api_key_hash: string;
+  api_key_hash?: string | null;
+  key_prefix?: string | null;
   is_active: boolean;
   brand_knowledge: string;
   tone: string;

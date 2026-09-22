@@ -217,8 +217,8 @@ console.log(post.title, post.content);`;
           className="flex flex-wrap items-center justify-center gap-4 mb-16"
         >
           <Button asChild size="lg" className="h-12 px-7 text-sm font-semibold shadow-lg shadow-primary/10 gap-2 group">
-            <Link href="/admin">
-              Launch Admin Dashboard
+            <Link href="/onboard">
+              Get Started Free
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
@@ -751,7 +751,7 @@ console.log(post.title, post.content);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/admin">Get Started</Link>
+                <Link href="/onboard">Get Started Free</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -798,7 +798,7 @@ console.log(post.title, post.content);`;
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
-                  <Link href="/admin">Start 14-Day Free Trial</Link>
+                  <Link href="/onboard">Start 14-Day Free Trial</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -840,7 +840,7 @@ console.log(post.title, post.content);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/admin">Contact Sales</Link>
+                <Link href="/onboard">Contact Sales</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -861,8 +861,8 @@ console.log(post.title, post.content);`;
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="h-12 px-8 font-semibold shadow-lg shadow-primary/20">
-              <Link href="/admin">
-                Open Admin Dashboard
+              <Link href="/onboard">
+                Create Account &amp; Register Site
                 <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </Button>

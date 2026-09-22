@@ -549,7 +549,7 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                                 Copy Tenant ID
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => copyToClipboard(profile.api_key_hash)}
+                                onClick={() => copyToClipboard(profile.api_key_hash || "No key generated")}
                                 className="gap-2 cursor-pointer"
                               >
                                 <Key className="h-3.5 w-3.5" />
