@@ -17,12 +17,11 @@ import {
   Globe,
   Building2,
   BookOpen,
-  ShieldCheck,
   Lock,
-  Layers,
   CheckCircle2,
   Loader2,
   AlertCircle,
+  Users,
 } from "lucide-react";
 
 export default function OnboardPage() {
@@ -36,24 +35,24 @@ export default function OnboardPage() {
   const [domain, setDomain] = useState("");
   const [brandKnowledge, setBrandKnowledge] = useState("");
   const [tone, setTone] = useState("authoritative, actionable, conversion-focused");
-  const [targetAudience, setTargetAudience] = useState("business decision makers and technical founders");
+  const [targetAudience, setTargetAudience] = useState("potential clients and industry professionals");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (!siteName.trim()) {
-      setErrorMessage("Please enter your site or company name.");
+      setErrorMessage("Please enter your business or website name.");
       setStep(1);
       return;
     }
     if (!domain.trim()) {
-      setErrorMessage("Please enter your canonical domain (e.g., example.com).");
+      setErrorMessage("Please enter your website domain (e.g., example.com).");
       setStep(1);
       return;
     }
     if (!brandKnowledge.trim()) {
-      setErrorMessage("Please provide a summary of your brand, product, and core value proposition.");
+      setErrorMessage("Please describe what your business does and the problems you solve.");
       setStep(2);
       return;
     }
@@ -70,12 +69,12 @@ export default function OnboardPage() {
       });
 
       if (!res.success || !res.siteId) {
-        setErrorMessage(res.error || "Failed to initialize site profile.");
+        setErrorMessage(res.error || "Failed to create your brand account.");
         setIsLoading(false);
         return;
       }
 
-      // Successfully registered — redirect to tenant dashboard where key is generated on-demand
+      // Redirect to client dashboard where key is generated on-demand
       router.push(`/dashboard?siteId=${res.siteId}`);
     } catch (err: any) {
       setErrorMessage(err?.message || "An unexpected error occurred.");
@@ -97,9 +96,9 @@ export default function OnboardPage() {
         </Link>
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span>Already registered?</span>
+          <span>Already have an account?</span>
           <Button asChild variant="outline" size="sm" className="text-xs">
-            <Link href="/admin">Admin Login</Link>
+            <Link href="/admin">Client Sign In</Link>
           </Button>
         </div>
       </header>
@@ -117,7 +116,7 @@ export default function OnboardPage() {
               >
                 1
               </div>
-              <span className="text-xs font-medium">Site Identity</span>
+              <span className="text-xs font-medium">Your Website</span>
             </div>
 
             <Separator className="w-16 bg-border/60" />
@@ -130,7 +129,7 @@ export default function OnboardPage() {
               >
                 2
               </div>
-              <span className="text-xs font-medium">Brand DNA</span>
+              <span className="text-xs font-medium">Your Brand Voice</span>
             </div>
           </div>
 
@@ -139,7 +138,7 @@ export default function OnboardPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-bold tracking-tight">
-                  {step === 1 ? "Register Your Site" : "Configure Brand Voice"}
+                  {step === 1 ? "Connect Your Website" : "Set Your Brand Voice"}
                 </CardTitle>
                 <Badge variant="outline" className="font-mono text-[11px]">
                   Step {step} of 2
@@ -147,8 +146,8 @@ export default function OnboardPage() {
               </div>
               <CardDescription>
                 {step === 1
-                  ? "Connect your blog domain to start autonomous programmatic content generation."
-                  : "Define your company's tone and audience for tailored, high-converting SEO articles."}
+                  ? "Tell us where your articles will be published to automatically link back to your business."
+                  : "Help our system write with your exact expertise, terminology, and preferred tone."}
               </CardDescription>
             </CardHeader>
 
@@ -166,10 +165,10 @@ export default function OnboardPage() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 text-indigo-400" />
-                        Site or Company Name
+                        Company or Business Name
                       </label>
                       <Input
-                        placeholder="e.g. Acme Cloud Systems"
+                        placeholder="e.g. Bright Dental Studio, Peak Commerce, Acme Growth"
                         value={siteName}
                         onChange={(e) => setSiteName(e.target.value)}
                         required
@@ -180,27 +179,27 @@ export default function OnboardPage() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Globe className="h-3.5 w-3.5 text-indigo-400" />
-                        Canonical Domain
+                        Your Website Address
                       </label>
                       <Input
-                        placeholder="e.g. acme.com"
+                        placeholder="e.g. brightdental.com or peakcommerce.io"
                         value={domain}
                         onChange={(e) => setDomain(e.target.value)}
                         required
                         className="bg-background/50 border-border/80 text-sm"
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Your generated blogs will automatically inject internal SEO links pointing to this domain.
+                        Your articles will naturally link back to this website to boost your Google search authority.
                       </p>
                     </div>
 
-                    {/* Notice on On-Demand Key Generation */}
+                    {/* Security notice */}
                     <div className="rounded-lg border border-border/60 bg-muted/30 p-3.5 flex items-start gap-2.5 text-xs text-muted-foreground mt-4">
                       <Lock className="h-4 w-4 text-purple-400 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-semibold text-foreground">On-Demand API Key Security</span>
+                        <span className="font-semibold text-foreground">Private &amp; Secure Access</span>
                         <p className="mt-0.5 text-[11px] leading-relaxed">
-                          Your API key is not created automatically during signup. You will generate and reveal your private key on-demand inside your dashboard.
+                          Your secret publishing key will be safely generated on-demand inside your private dashboard, ensuring complete privacy for your website.
                         </p>
                       </div>
                     </div>
@@ -212,10 +211,10 @@ export default function OnboardPage() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <BookOpen className="h-3.5 w-3.5 text-purple-400" />
-                        Brand Knowledge &amp; Value Proposition
+                        What does your business offer?
                       </label>
                       <Textarea
-                        placeholder="Describe what your product does, key features, core solutions, and why customers choose you..."
+                        placeholder="Describe your core products, services, solutions, and what makes your business the best choice for clients..."
                         rows={4}
                         value={brandKnowledge}
                         onChange={(e) => setBrandKnowledge(e.target.value)}
@@ -223,38 +222,41 @@ export default function OnboardPage() {
                         className="bg-background/50 border-border/80 text-sm resize-none"
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Our engine uses this context to weave natural, domain-specific authority into every blog.
+                        Our engine uses this background to write authoritative articles that highlight your real-world solutions.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground">Tone of Voice</label>
+                        <label className="text-xs font-semibold text-foreground">Preferred Writing Style</label>
                         <Select value={tone} onValueChange={setTone}>
                           <SelectTrigger className="bg-background/50 border-border/80 text-xs">
                             <SelectValue placeholder="Select tone" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="authoritative, actionable, conversion-focused">
-                              Authoritative &amp; Direct
-                            </SelectItem>
-                            <SelectItem value="technical, rigorous, developer-friendly">
-                              Technical &amp; In-depth
+                              Authoritative &amp; Professional (Best for B2B)
                             </SelectItem>
                             <SelectItem value="engaging, conversational, relatable">
-                              Engaging &amp; Conversational
+                              Friendly &amp; Relatable (Best for Brands)
+                            </SelectItem>
+                            <SelectItem value="technical, rigorous, developer-friendly">
+                              In-Depth &amp; Tactical (Best for Services)
                             </SelectItem>
                             <SelectItem value="executive, data-driven, strategic">
-                              Executive &amp; Data-Driven
+                              Executive &amp; Strategic (Corporate)
                             </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-foreground">Target Audience</label>
+                        <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                          <Users className="h-3 w-3 text-muted-foreground" />
+                          Target Audience
+                        </label>
                         <Input
-                          placeholder="e.g. Founders, Engineers, CTOs"
+                          placeholder="e.g. Clinic owners, homeowners, SaaS buyers"
                           value={targetAudience}
                           onChange={(e) => setTargetAudience(e.target.value)}
                           className="bg-background/50 border-border/80 text-xs"
@@ -287,7 +289,7 @@ export default function OnboardPage() {
                     size="sm"
                     onClick={() => {
                       if (!siteName.trim() || !domain.trim()) {
-                        setErrorMessage("Please complete all fields before proceeding.");
+                        setErrorMessage("Please enter both your business name and website address.");
                         return;
                       }
                       setErrorMessage(null);
@@ -295,7 +297,7 @@ export default function OnboardPage() {
                     }}
                     className="text-xs gap-1.5"
                   >
-                    Continue
+                    Continue to Brand Voice
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
@@ -303,11 +305,11 @@ export default function OnboardPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Initializing Dashboard...
+                        Setting Up Dashboard...
                       </>
                     ) : (
                       <>
-                        Complete Setup
+                        Launch My Blog Portal
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </>
                     )}
@@ -321,7 +323,7 @@ export default function OnboardPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-4 px-4 text-center text-xs text-muted-foreground">
-        &copy; {new Date().getFullYear()} AI Blog SaaS Platform. Built for 10,000+ Concurrent Requests.
+        &copy; {new Date().getFullYear()} AI Blog SaaS Platform. Professional Organic Publishing for Modern Businesses.
       </footer>
     </div>
   );

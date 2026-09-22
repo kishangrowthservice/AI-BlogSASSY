@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,50 +33,25 @@ import {
   Sliders,
   ChevronRight,
   Workflow,
-  ShieldAlert,
+  Search,
+  BookOpen,
+  Award,
+  Users,
+  Target,
+  FileText,
 } from "lucide-react";
 
 export function LandingPage() {
-  const [copiedCurl, setCopiedCurl] = useState(false);
-  const [copiedSdk, setCopiedSdk] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
 
-  const curlCode = `curl -X POST https://api.growthservice.in/api/generate-blog \\
-  -H "Content-Type: application/json" \\
-  -H "x-api-key: gs_live_9a7b...4c21" \\
-  -d '{
-    "topic": "Why High-Concurrency Headless Architectures Win in 2026",
-    "keywords": ["distributed systems", "edge compute", "latency"],
-    "wordCount": 1200,
-    "async": false
-  }'`;
-
-  const sdkCode = `import { BlogClient } from "@growthservice/blog-client";
-
-const client = new BlogClient({
-  apiKey: process.env.BLOG_API_KEY!,
-  endpoint: "https://api.growthservice.in"
+  const integrationSnippet = `// 1-Click Publishing to Your Website
+const article = await blogEngine.publish({
+  topic: "10 High-Impact Ways Modern Businesses Scale Organic Traffic",
+  category: "Growth & Marketing"
 });
 
-// Generate SEO-grade blog in <800ms
-const post = await client.generateBlog({
-  topic: "Next.js 15 Serverless Optimization",
-  keywords: ["SSR", "Next.js 15", "Caching"],
-  wordCount: 1500
-});
-
-console.log(post.title, post.content);`;
-
-  const handleCopy = (text: string, type: "curl" | "sdk") => {
-    navigator.clipboard.writeText(text);
-    if (type === "curl") {
-      setCopiedCurl(true);
-      setTimeout(() => setCopiedCurl(false), 2000);
-    } else {
-      setCopiedSdk(true);
-      setTimeout(() => setCopiedSdk(false), 2000);
-    }
-  };
+console.log("Published:", article.title, article.url);`;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
@@ -118,28 +93,25 @@ console.log(post.title, post.content);`;
               <span className="font-bold tracking-tight text-foreground text-base leading-none">
                 AI Blog SaaS
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                GROWTH ENGINE • 10K READY
+              <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                AUTONOMOUS ORGANIC GROWTH
               </span>
             </div>
           </Link>
 
           {/* Center Navigation Links */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">
+              How It Works
+            </a>
             <a href="#features" className="hover:text-foreground transition-colors">
               Features
             </a>
-            <a href="#architecture" className="hover:text-foreground transition-colors">
-              Architecture
-            </a>
-            <a href="#demo" className="hover:text-foreground transition-colors">
-              Interactive Demo
-            </a>
-            <a href="#benchmarks" className="hover:text-foreground transition-colors">
-              Benchmarks
+            <a href="#sample-preview" className="hover:text-foreground transition-colors">
+              Live Preview
             </a>
             <a href="#pricing" className="hover:text-foreground transition-colors">
-              Pricing
+              Plans &amp; Pricing
             </a>
           </nav>
 
@@ -150,19 +122,19 @@ console.log(post.title, post.content);`;
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
               </span>
-              <span>Cluster 99.99%</span>
+              <span>Publishing 24/7 Active</span>
             </div>
 
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-xs">
               <Link href="/preview">
                 <Sparkles className="h-3.5 w-3.5 mr-1 text-purple-400" />
-                Studio
+                Interactive Studio
               </Link>
             </Button>
 
             <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
-              <Link href="/admin">
-                Admin Console
+              <Link href="/onboard">
+                Get Started Free
                 <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Link>
             </Button>
@@ -179,10 +151,10 @@ console.log(post.title, post.content);`;
           transition={{ duration: 0.5 }}
           className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-secondary/50 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-xs backdrop-blur-md mb-8 hover:border-primary/50 transition-colors cursor-default"
         >
-          <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="text-foreground font-semibold">Dual-LLM Circuit Failover</span>
+          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-foreground font-semibold">Autonomous Content Engine</span>
           <Separator orientation="vertical" className="h-3 bg-border" />
-          <span className="text-muted-foreground">Hardened for 10,000+ Concurrent Requests</span>
+          <span className="text-muted-foreground">Rank on Google &amp; Convert Readers to Clients</span>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
         </motion.div>
 
@@ -193,9 +165,9 @@ console.log(post.title, post.content);`;
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl text-foreground leading-[1.1] mb-6"
         >
-          Enterprise AI Blog Generation at{" "}
+          Turn Your Blog Into a 24/7{" "}
           <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Uncapped Scale
+            Customer Magnet
           </span>
         </motion.h1>
 
@@ -206,7 +178,7 @@ console.log(post.title, post.content);`;
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-normal"
         >
-          Zero-downtime content generation gateway. Groq Llama 3.3 70B primary with instant Gemini 2.0 Flash failover, multi-tenant prompt injection boundaries, and sub-800ms generation.
+          Publish human-grade, SEO-optimized articles that match your authentic brand voice and convert readers into paying clients — without spending 20+ hours a week writing.
         </motion.p>
 
         {/* Primary CTA Buttons */}
@@ -218,7 +190,7 @@ console.log(post.title, post.content);`;
         >
           <Button asChild size="lg" className="h-12 px-7 text-sm font-semibold shadow-lg shadow-primary/10 gap-2 group">
             <Link href="/onboard">
-              Get Started Free
+              Start Free Trial
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
@@ -226,12 +198,12 @@ console.log(post.title, post.content);`;
           <Button asChild variant="outline" size="lg" className="h-12 px-6 text-sm font-semibold border-border/80 bg-card/40 backdrop-blur hover:bg-accent/40 gap-2">
             <Link href="/preview">
               <Sparkles className="h-4 w-4 text-purple-400" />
-              Test Live Preview Studio
+              See Live Sample Article
             </Link>
           </Button>
         </motion.div>
 
-        {/* Quick Metric Badges */}
+        {/* Quick Value Badges */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -240,50 +212,50 @@ console.log(post.title, post.content);`;
         >
           <div className="flex flex-col items-center">
             <span className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-              &lt; 800ms
+              100%
             </span>
             <span className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Avg Groq Latency
+              Authentic Brand Voice
             </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-2xl sm:text-3xl font-extrabold text-indigo-400 tracking-tight">
-              10,000+
+              Top #1-3
             </span>
             <span className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Concurrent Capacity
+              Google SEO Focus
             </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
-              99.98%
+              99.99%
             </span>
             <span className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Dual-LLM Uptime
+              Publishing Reliability
             </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-2xl sm:text-3xl font-extrabold text-purple-400 tracking-tight">
-              100%
+              2 Mins
             </span>
             <span className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
-              Anti-AI SEO Score
+              Fast Setup Time
             </span>
           </div>
         </motion.div>
       </section>
 
-      {/* Interactive Terminal & Live Spec Demo Section */}
-      <section id="demo" className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
+      {/* Interactive Live Article Preview Section */}
+      <section id="sample-preview" className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
         <div className="text-center mb-10">
           <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
-            DEVELOPER FIRST CONTRACT
+            SEE WHAT YOUR AUDIENCE SEES
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            Plug Into Any Stack in 60 Seconds
+            In-Depth, High-Converting Content
           </h2>
           <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto mt-2">
-            REST endpoint or type-safe SDK. Returns fully structured semantic HTML with clean JSON metadata.
+            No robotic clichés or generic summaries. Every article is written with real authority, tailored keywords, and clear calls-to-action.
           </p>
         </div>
 
@@ -294,162 +266,128 @@ console.log(post.title, post.content);`;
           transition={{ duration: 0.6 }}
         >
           <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-2xl overflow-hidden">
-            {/* Window Title Bar */}
+            {/* Window Header */}
             <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-red-500/80" />
                 <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
                 <div className="h-3 w-3 rounded-full bg-green-500/80" />
                 <span className="ml-2 font-mono text-xs text-muted-foreground">
-                  gateway.growthservice.in — api/generate-blog
+                  YourWebsite.com/blog/how-to-scale-organic-revenue
                 </span>
               </div>
-              <Badge variant="secondary" className="font-mono text-[11px] text-muted-foreground">
-                POST 200 OK • 742ms
+              <Badge variant="secondary" className="font-medium text-[11px] text-emerald-400 border border-emerald-500/20">
+                SEO Score: 98/100
               </Badge>
             </div>
 
-            {/* Tabs for cURL vs SDK vs Response Preview */}
-            <Tabs defaultValue="curl" className="w-full">
+            {/* Content Tabs */}
+            <Tabs defaultValue="article" className="w-full">
               <div className="flex items-center justify-between px-4 pt-3 border-b border-border/40">
                 <TabsList className="bg-muted/50 p-1">
-                  <TabsTrigger value="curl" className="text-xs font-mono gap-1.5">
-                    <Terminal className="h-3.5 w-3.5" />
-                    cURL Request
+                  <TabsTrigger value="article" className="text-xs gap-1.5">
+                    <FileText className="h-3.5 w-3.5" />
+                    Published Article Sample
                   </TabsTrigger>
-                  <TabsTrigger value="sdk" className="text-xs font-mono gap-1.5">
-                    <Code2 className="h-3.5 w-3.5" />
-                    TypeScript SDK
+                  <TabsTrigger value="seo" className="text-xs gap-1.5">
+                    <Search className="h-3.5 w-3.5 text-indigo-400" />
+                    Google SEO &amp; Linking
                   </TabsTrigger>
-                  <TabsTrigger value="preview" className="text-xs font-mono gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                    Generated Output Preview
-                  </TabsTrigger>
-                  <TabsTrigger value="telemetry" className="text-xs font-mono gap-1.5">
-                    <Activity className="h-3.5 w-3.5 text-emerald-400" />
-                    Circuit &amp; Telemetry
+                  <TabsTrigger value="voice" className="text-xs gap-1.5">
+                    <Sliders className="h-3.5 w-3.5 text-purple-400" />
+                    Brand Voice Matching
                   </TabsTrigger>
                 </TabsList>
               </div>
 
-              {/* cURL Tab */}
-              <TabsContent value="curl" className="p-4 m-0 relative">
-                <div className="absolute right-6 top-6 z-10">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5 text-xs bg-background/80 backdrop-blur"
-                    onClick={() => handleCopy(curlCode, "curl")}
-                  >
-                    {copiedCurl ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-emerald-400" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy cURL
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <pre className="font-mono text-xs text-indigo-300 bg-black/80 p-5 rounded-lg overflow-x-auto leading-relaxed border border-border/40">
-                  {curlCode}
-                </pre>
-              </TabsContent>
-
-              {/* SDK Tab */}
-              <TabsContent value="sdk" className="p-4 m-0 relative">
-                <div className="absolute right-6 top-6 z-10">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5 text-xs bg-background/80 backdrop-blur"
-                    onClick={() => handleCopy(sdkCode, "sdk")}
-                  >
-                    {copiedSdk ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-emerald-400" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy SDK
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <pre className="font-mono text-xs text-emerald-300 bg-black/80 p-5 rounded-lg overflow-x-auto leading-relaxed border border-border/40">
-                  {sdkCode}
-                </pre>
-              </TabsContent>
-
-              {/* Output Preview Tab */}
-              <TabsContent value="preview" className="p-6 m-0 bg-background/40 space-y-4">
-                <div className="border border-border/60 rounded-xl p-5 bg-card/60 backdrop-blur space-y-3">
+              {/* Tab 1: Article Preview */}
+              <TabsContent value="article" className="p-6 m-0 bg-background/40 space-y-4">
+                <div className="border border-border/60 rounded-xl p-6 bg-card/60 backdrop-blur space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-500/30">
-                      SEO Score: 98/100
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">Growth Insights</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> 4 min read
+                      </span>
+                    </div>
+                    <Badge variant="outline" className="text-[11px] text-purple-400 border-purple-500/30">
+                      Target Audience: Business Founders
                     </Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
-                      <Clock className="h-3.5 w-3.5" /> 4 min read • 1,180 words
-                    </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-foreground">
-                    Why High-Concurrency Headless Architectures Win in 2026
+                  <h3 className="text-2xl font-extrabold text-foreground tracking-tight">
+                    How Modern Companies Generate High-Intent Leads Without Paid Ads
                   </h3>
 
-                  <p className="text-xs text-muted-foreground italic">
-                    Meta Description: Discover why distributed edge gateways with dual LLM failover outperform legacy synchronous backends. A practical blueprint for high-traffic SaaS builders.
+                  <p className="text-sm text-muted-foreground italic border-l-2 border-primary/50 pl-3">
+                    Meta Description: Discover how programmatic organic content outperforms costly PPC campaigns in sustainable lead generation and domain authority.
                   </p>
 
-                  <div className="text-sm text-foreground/80 leading-relaxed border-t border-border/40 pt-3 space-y-2">
+                  <div className="text-sm text-foreground/80 leading-relaxed space-y-3 pt-2">
                     <p>
-                      Modern programmatic content generation demands predictable sub-second latency and zero-tolerance for third-party provider downtime. When handling thousands of concurrent users, traditional single-threaded LLM wrappers quickly buckle under rate limits and connection exhaustion...
+                      For years, businesses assumed that the fastest route to acquiring high-value clients was pouring thousands of dollars into Facebook and Google ads. But as customer acquisition costs climb every quarter, industry leaders are shifting toward durable, organic content assets that compound over time...
+                    </p>
+                    <p>
+                      When a prospective client searches for a solution to their core bottleneck, arriving at an in-depth, authoritative guide creates instant trust. Instead of feeling sold to, the reader recognizes your company as the obvious market expert...
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {["Distributed Systems", "Edge Compute", "Latency", "SaaS Scale"].map((tag) => (
-                      <span key={tag} className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                        #{tag}
-                      </span>
-                    ))}
+                  <div className="rounded-lg border border-border/80 bg-secondary/30 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4">
+                    <div>
+                      <div className="text-xs font-bold text-foreground">Need help scaling your organic pipeline?</div>
+                      <div className="text-xs text-muted-foreground">Speak with our strategy team today.</div>
+                    </div>
+                    <Button size="sm" className="text-xs font-semibold">
+                      Schedule a Consultation
+                    </Button>
                   </div>
                 </div>
               </TabsContent>
 
-              {/* Telemetry Tab */}
-              <TabsContent value="telemetry" className="p-6 m-0 bg-background/40">
+              {/* Tab 2: SEO Breakdown */}
+              <TabsContent value="seo" className="p-6 m-0 bg-background/40">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="border border-border/60 rounded-lg p-4 bg-card/40">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span className="font-semibold">GROQ CIRCUIT STATE</span>
-                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                    </div>
-                    <div className="text-xl font-bold text-foreground">CLOSED (Healthy)</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Llama 3.3 70B • 742ms latency</p>
+                    <div className="text-xs text-muted-foreground font-semibold mb-1">KEYWORD TARGETING</div>
+                    <div className="text-lg font-bold text-foreground">Organic B2B Growth</div>
+                    <p className="text-xs text-muted-foreground mt-1">Naturally distributed across titles, subheadings, and paragraphs.</p>
                   </div>
 
                   <div className="border border-border/60 rounded-lg p-4 bg-card/40">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span className="font-semibold">GEMINI FALLBACK</span>
-                      <span className="h-2 w-2 rounded-full bg-blue-400" />
-                    </div>
-                    <div className="text-xl font-bold text-foreground">STANDBY (Hot)</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Gemini 2.0 Flash • 0ms cold start</p>
+                    <div className="text-xs text-muted-foreground font-semibold mb-1">SMART INTERNAL LINKS</div>
+                    <div className="text-lg font-bold text-indigo-400">Automatic Linking</div>
+                    <p className="text-xs text-muted-foreground mt-1">Connects readers directly to your services and pricing pages.</p>
                   </div>
 
                   <div className="border border-border/60 rounded-lg p-4 bg-card/40">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span className="font-semibold">ATOMIC CANARY LEASE</span>
-                      <span className="h-2 w-2 rounded-full bg-purple-400" />
+                    <div className="text-xs text-muted-foreground font-semibold mb-1">HUMAN TONE GUARANTEE</div>
+                    <div className="text-lg font-bold text-emerald-400">Zero AI Clichés</div>
+                    <p className="text-xs text-muted-foreground mt-1">Strict quality filters ensure natural rhythm and compelling hooks.</p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Tab 3: Brand Voice */}
+              <TabsContent value="voice" className="p-6 m-0 bg-background/40 space-y-4">
+                <div className="border border-border/60 rounded-xl p-5 bg-card/50 space-y-3">
+                  <h4 className="text-sm font-bold text-foreground">How We Match Your Company Tone</h4>
+                  <p className="text-xs text-muted-foreground">
+                    During onboarding, you share a brief overview of what makes your business unique. Our system trains every article to mirror your exact vocabulary, brand values, and preferred tone of voice.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                    <div className="rounded-md border border-border/50 bg-background/50 p-3 text-xs">
+                      <span className="font-semibold text-foreground">Authoritative</span>
+                      <p className="text-muted-foreground text-[11px] mt-0.5">High-conviction, professional guidance for industry executives.</p>
                     </div>
-                    <div className="text-xl font-bold text-foreground">ACTIVE (1 Lease)</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Thundering Herd Prevention</p>
+                    <div className="rounded-md border border-border/50 bg-background/50 p-3 text-xs">
+                      <span className="font-semibold text-foreground">Conversational</span>
+                      <p className="text-muted-foreground text-[11px] mt-0.5">Warm, relatable, and approachable style for consumer audiences.</p>
+                    </div>
+                    <div className="rounded-md border border-border/50 bg-background/50 p-3 text-xs">
+                      <span className="font-semibold text-foreground">Expert &amp; Detailed</span>
+                      <p className="text-muted-foreground text-[11px] mt-0.5">Data-backed and tactical insights for technical readers.</p>
+                    </div>
                   </div>
                 </div>
               </TabsContent>
@@ -458,22 +396,149 @@ console.log(post.title, post.content);`;
         </motion.div>
       </section>
 
+      {/* How It Works (Client-Friendly 4 Steps) */}
+      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full border-t border-border/40">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
+            SIMPLE 4-STEP PROCESS
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+            How It Works for Your Business
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base mt-2">
+            No complex setups or coding required. You can have your blog publishing engine running in under 2 minutes.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
+            <div className="font-mono text-xs font-bold text-indigo-400 mb-2">STEP 01</div>
+            <h4 className="font-bold text-foreground text-base mb-1">Add Your Website</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Enter your website domain and a brief description of what your business offers.
+            </p>
+          </Card>
+
+          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
+            <div className="font-mono text-xs font-bold text-purple-400 mb-2">STEP 02</div>
+            <h4 className="font-bold text-foreground text-base mb-1">Set Your Tone</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Choose your ideal style: Authoritative, Friendly, or Technical. We tailor every sentence.
+            </p>
+          </Card>
+
+          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
+            <div className="font-mono text-xs font-bold text-orange-400 mb-2">STEP 03</div>
+            <h4 className="font-bold text-foreground text-base mb-1">Generate On-Demand</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Generate full, ready-to-rank articles complete with SEO titles, meta tags, and internal links.
+            </p>
+          </Card>
+
+          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
+            <div className="font-mono text-xs font-bold text-emerald-400 mb-2">STEP 04</div>
+            <h4 className="font-bold text-foreground text-base mb-1">Publish &amp; Rank</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Publish directly to WordPress, Shopify, Webflow, or your custom website with 1 click.
+            </p>
+          </Card>
+        </div>
+      </section>
+
       {/* Feature Bento Grid Section */}
       <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
-            CORE CAPABILITIES
+            WHY CLIENTS CHOOSE US
           </Badge>
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-            Engineered for Concurrency, Not Toy Demos
+            Everything You Need to Dominate Organic Search
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg mt-3">
-            Every layer from database locks to token decoders was built to survive massive traffic surges without data loss or noisy-neighbor starvation.
+            Built from the ground up to give growing brands and digital agencies an unfair organic advantage.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Dual LLM Failover */}
+          {/* Card 1: Brand Voice */}
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-colors" />
+              <CardHeader>
+                <div className="h-10 w-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-2">
+                  <Award className="h-5 w-5 text-indigo-400" />
+                </div>
+                <CardTitle className="text-lg">Authentic Brand Voice</CardTitle>
+                <CardDescription>
+                  Learns your company story, product features, and target audience. Writes like a seasoned industry expert, never a generic bot.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Customizable tone presets</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Zero repetitive robotic phrasing</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Card 2: Google Rankings */}
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
+              <CardHeader>
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-2">
+                  <Search className="h-5 w-5 text-emerald-400" />
+                </div>
+                <CardTitle className="text-lg">Google SEO Optimization</CardTitle>
+                <CardDescription>
+                  Automatically creates keyword-rich titles, semantic headings, and search-optimized meta descriptions tailored for Google.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Rank for high-intent search keywords</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Includes structured tags and summaries</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Card 3: Smart Internal Linking */}
+          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+            <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
+              <CardHeader>
+                <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2">
+                  <TrendingUp className="h-5 w-5 text-purple-400" />
+                </div>
+                <CardTitle className="text-lg">Smart Internal Linking</CardTitle>
+                <CardDescription>
+                  Automatically inserts relevant links to your key service and pricing pages, boosting your overall website authority.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Distributes SEO authority across your site</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Guides readers straight to your checkout</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Card 4: Never Down */}
           <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-colors" />
@@ -481,202 +546,75 @@ console.log(post.title, post.content);`;
                 <div className="h-10 w-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-2">
                   <Zap className="h-5 w-5 text-orange-400" />
                 </div>
-                <CardTitle className="text-lg">Dual-LLM Circuit Canary</CardTitle>
+                <CardTitle className="text-lg">Always-On Reliability</CardTitle>
                 <CardDescription>
-                  Sub-800ms Groq primary with atomic canary leases. Automatically diverts to Google Gemini 2.0 Flash upon 3 consecutive faults without dropping requests.
+                  Powered by redundant enterprise AI engines. Even during global AI traffic spikes, your publishing schedule never stumbles.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>30-second atomic cooldown lock</span>
+                  <span>99.99% publishing uptime guarantee</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Zero thundering herd on recovery</span>
+                  <span>Instant failover with zero dropped jobs</span>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Card 2: Prompt Shield */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-            <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-colors" />
-              <CardHeader>
-                <div className="h-10 w-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-2">
-                  <ShieldCheck className="h-5 w-5 text-indigo-400" />
-                </div>
-                <CardTitle className="text-lg">Prompt Shield &amp; Brand DNA</CardTitle>
-                <CardDescription>
-                  Isolates all untrusted tenant parameters within strict XML boundaries. Dynamically injects brand voice, target audience, and canonical internal links.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Prompt injection immunity</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Automatic link equity distribution</span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Card 3: Sliding Rate Limiter */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-            <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
-              <CardHeader>
-                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-2">
-                  <Lock className="h-5 w-5 text-emerald-400" />
-                </div>
-                <CardTitle className="text-lg">Noisy-Neighbor Quarantine</CardTitle>
-                <CardDescription>
-                  Distributed PostgreSQL atomic token-bucket counters. Rejects burst abusers with HTTP 429 at the edge so rogue tenants cannot starve shared quotas.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Atomic RPC increment with row locks</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Standardized Retry-After headers</span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Card 4: Asynchronous Queue */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-            <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
-              <CardHeader>
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2">
-                  <Workflow className="h-5 w-5 text-purple-400" />
-                </div>
-                <CardTitle className="text-lg">Asynchronous Queue &amp; Jitter</CardTitle>
-                <CardDescription>
-                  For heavy bursts, pass ?async=true to get HTTP 202 in 25ms. Background cron processes jobs with exponential backoff and randomized jitter.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>SKIP LOCKED concurrency safety</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Client SDK auto-polling helpers</span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Card 5: BYO-Key Isolation */}
+          {/* Card 5: Multi-Site Agency Ready */}
           <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl group-hover:bg-sky-500/20 transition-colors" />
               <CardHeader>
                 <div className="h-10 w-10 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-2">
-                  <Database className="h-5 w-5 text-sky-400" />
+                  <Globe className="h-5 w-5 text-sky-400" />
                 </div>
-                <CardTitle className="text-lg">Dedicated BYO-Key Support</CardTitle>
+                <CardTitle className="text-lg">Multi-Site &amp; Agency Ready</CardTitle>
                 <CardDescription>
-                  Tenants can plug their private Groq or Gemini API keys. Dedicated quota pools with zero risk of shared platform rate limit exhaustion.
+                  Run 1 brand or 20 client websites from one organized portal. Each site maintains its own brand tone, audience, and links.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Per-tenant key encryption</span>
+                  <span>Dedicated brand profiles per client</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Unlimited monthly generations</span>
+                  <span>Isolated keys and publishing limits</span>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Card 6: Observability & Telemetry */}
+          {/* Card 6: Easy Publishing */}
           <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl group-hover:bg-pink-500/20 transition-colors" />
               <CardHeader>
                 <div className="h-10 w-10 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-2">
-                  <BarChart3 className="h-5 w-5 text-pink-400" />
+                  <CheckCircle2 className="h-5 w-5 text-pink-400" />
                 </div>
-                <CardTitle className="text-lg">Deep Observability Stream</CardTitle>
+                <CardTitle className="text-lg">1-Click Website Publishing</CardTitle>
                 <CardDescription>
-                  Tracks token consumption, prompt/completion ratios, exact millisecond generation latency, finish reasons, and per-tenant margin metrics.
+                  Seamlessly push published articles into WordPress, Shopify, Webflow, Ghost, or custom platforms with zero friction.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Granular generation_logs audit trail</span>
+                  <span>Clean semantic HTML ready for CMS paste</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Admin live telemetry visualization</span>
+                  <span>Automated publishing hooks available</span>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Architecture Flow Section */}
-      <section id="architecture" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full border-t border-border/40">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
-            REQUEST LIFECYCLE
-          </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            How 10,000+ Concurrent Requests Flow
-          </h2>
-          <p className="text-muted-foreground text-sm sm:text-base mt-2">
-            Every step is protected by atomic leases, row-level locks, and strict anti-injection schemas.
-          </p>
-        </div>
-
-        <div className="relative grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
-            <div className="font-mono text-xs font-bold text-indigo-400 mb-2">STEP 01</div>
-            <h4 className="font-bold text-foreground text-base mb-1">Gateway Auth &amp; Capping</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              SHA-256 API key verified against site_profiles. Atomic token bucket checked in Postgres.
-            </p>
-          </Card>
-
-          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
-            <div className="font-mono text-xs font-bold text-purple-400 mb-2">STEP 02</div>
-            <h4 className="font-bold text-foreground text-base mb-1">Prompt Isolation Engine</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Untrusted topic wrapped in XML tags. Injects internal links, brand tone, and schema constraints.
-            </p>
-          </Card>
-
-          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
-            <div className="font-mono text-xs font-bold text-orange-400 mb-2">STEP 03</div>
-            <h4 className="font-bold text-foreground text-base mb-1">Dual-LLM Circuit Canary</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Sub-800ms Groq execution. If degraded, 1 request leases canary probe while remaining traffic shifts to Gemini.
-            </p>
-          </Card>
-
-          <Card className="border-border/60 bg-card/50 p-5 backdrop-blur relative">
-            <div className="font-mono text-xs font-bold text-emerald-400 mb-2">STEP 04</div>
-            <h4 className="font-bold text-foreground text-base mb-1">Semantic Output &amp; Logs</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Decoded JSON schema validated with Zod. Audit telemetry logged asynchronously to database.
-            </p>
-          </Card>
         </div>
       </section>
 
@@ -684,13 +622,13 @@ console.log(post.title, post.content);`;
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-border/40">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
-            TRANSPARENT PRICING
+            SIMPLE, TRANSPARENT PLANS
           </Badge>
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-            Simple Plans for Scaling Teams
+            Invest in Traffic That Keeps Compounding
           </h2>
           <p className="text-muted-foreground text-base mt-2">
-            No surprise token charges. Unlimited client websites and guaranteed uptime.
+            No surprise overage charges. Choose the plan that matches your monthly publishing goals.
           </p>
 
           {/* Billing Switch */}
@@ -723,7 +661,7 @@ console.log(post.title, post.content);`;
           <Card className="border-border/70 bg-card/40 backdrop-blur-xl flex flex-col justify-between">
             <CardHeader>
               <CardTitle className="text-xl">Starter</CardTitle>
-              <CardDescription>Ideal for indie hackers and solo creators.</CardDescription>
+              <CardDescription>Perfect for founders and independent websites.</CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-extrabold text-foreground">
                   ${billingCycle === "annual" ? "24" : "29"}
@@ -734,24 +672,28 @@ console.log(post.title, post.content);`;
             <CardContent className="space-y-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>50 AI Blogs per month</span>
+                <span className="text-foreground font-medium">50 SEO Articles per month</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>1 Tenant site profile</span>
+                <span>1 Connected Website</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Dual LLM (Groq + Gemini) failover</span>
+                <span>Automated Google SEO Optimization</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Standard REST API access</span>
+                <span>Smart Internal Link Injection</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                <span>99.99% Publishing Uptime</span>
               </div>
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/onboard">Get Started Free</Link>
+                <Link href="/onboard">Start Free Trial</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -761,12 +703,12 @@ console.log(post.title, post.content);`;
             <Card className="border-indigo-500/50 bg-card/80 backdrop-blur-xl relative shadow-xl shadow-indigo-500/10 flex flex-col justify-between h-full">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 text-[11px] px-3">
-                  MOST POPULAR
+                  MOST POPULAR FOR GROWTH
                 </Badge>
               </div>
               <CardHeader className="pt-8">
                 <CardTitle className="text-xl">Growth Pro</CardTitle>
-                <CardDescription>For growing agencies and scalable SaaS startups.</CardDescription>
+                <CardDescription>For ambitious brands, e-commerce stores, and agencies.</CardDescription>
                 <div className="mt-4">
                   <span className="text-4xl font-extrabold text-foreground">
                     ${billingCycle === "annual" ? "64" : "79"}
@@ -777,23 +719,23 @@ console.log(post.title, post.content);`;
               <CardContent className="space-y-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span className="text-foreground font-medium">300 AI Blogs per month</span>
+                  <span className="text-foreground font-medium">300 SEO Articles per month</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span className="text-foreground font-medium">5 Tenant site profiles</span>
+                  <span className="text-foreground font-medium">Up to 5 Connected Websites</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span>Bring-Your-Own-Key (BYO-Key) mode</span>
+                  <span>Custom Brand Voice Tuning</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span>Asynchronous burst queue &amp; SDK polling</span>
+                  <span>Smart Internal Link Building</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span>Dynamic internal link injection</span>
+                  <span>Priority Generation Speed</span>
                 </div>
               </CardContent>
               <CardFooter>
@@ -807,8 +749,8 @@ console.log(post.title, post.content);`;
           {/* Scale Plan */}
           <Card className="border-border/70 bg-card/40 backdrop-blur-xl flex flex-col justify-between">
             <CardHeader>
-              <CardTitle className="text-xl">Enterprise Scale</CardTitle>
-              <CardDescription>For multi-site portfolios with 10k+ daily visitors.</CardDescription>
+              <CardTitle className="text-xl">Agency Scale</CardTitle>
+              <CardDescription>For digital marketing agencies managing multiple clients.</CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-extrabold text-foreground">
                   ${billingCycle === "annual" ? "199" : "249"}
@@ -819,28 +761,28 @@ console.log(post.title, post.content);`;
             <CardContent className="space-y-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Unlimited AI Blogs (BYO Key)</span>
+                <span className="text-foreground font-medium">Unlimited Monthly Articles</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Unlimited Tenant site profiles</span>
+                <span>Unlimited Client Brand Profiles</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Dedicated circuit canary probe</span>
+                <span>Dedicated Brand Onboarding Specialist</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>99.99% High-Availability SLA</span>
+                <span>99.99% Uptime Service Level Agreement</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Custom fine-tuned tone models</span>
+                <span>Custom Fine-Tuned Industry Models</span>
               </div>
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/onboard">Contact Sales</Link>
+                <Link href="/onboard">Get Started</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -853,21 +795,21 @@ console.log(post.title, post.content);`;
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <h2 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight mb-4">
-            Ready to Automate Your Blog Machine?
+            Ready to Put Your Organic Growth on Autopilot?
           </h2>
           <p className="text-muted-foreground text-base max-w-xl mx-auto mb-8">
-            Get your tenant API key and start publishing SEO-dominating content in under 2 minutes.
+            Set up your brand blog in under 2 minutes. Start publishing Google-dominating articles today.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="h-12 px-8 font-semibold shadow-lg shadow-primary/20">
               <Link href="/onboard">
-                Create Account &amp; Register Site
+                Start Your Free Trial
                 <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="h-12 px-6">
-              <Link href="/preview">Live Studio Preview</Link>
+              <Link href="/preview">Explore Sample Article</Link>
             </Button>
           </div>
         </Card>
@@ -881,24 +823,23 @@ console.log(post.title, post.content);`;
               <Sparkles className="h-3 w-3 text-indigo-400" />
             </div>
             <span className="font-semibold text-foreground">AI Blog SaaS Platform</span>
-            <span>• 10,000+ Concurrency Engine</span>
+            <span>• Organic Traffic &amp; SEO Engine</span>
           </div>
 
           <div className="flex items-center gap-6">
-            <Link href="/admin" className="hover:text-foreground transition-colors">
-              Admin
+            <Link href="/onboard" className="hover:text-foreground transition-colors">
+              Get Started
             </Link>
             <Link href="/preview" className="hover:text-foreground transition-colors">
-              Studio
+              Sample Studio
             </Link>
-            <a href="https://github.com/kishangrowthservice/AI-BlogSASSY" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-1">
-              GitHub
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            <Link href="/admin" className="hover:text-foreground transition-colors">
+              Client Portal
+            </Link>
           </div>
 
           <div>
-            &copy; {new Date().getFullYear()} GrowthService Inc. Enterprise Grade.
+            &copy; {new Date().getFullYear()} GrowthService Inc. All rights reserved.
           </div>
         </div>
       </footer>

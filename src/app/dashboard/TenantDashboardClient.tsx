@@ -30,7 +30,6 @@ import {
   Copy,
   Check,
   RefreshCw,
-  ShieldAlert,
   Terminal,
   Code2,
   Globe,
@@ -38,12 +37,14 @@ import {
   Database,
   BarChart3,
   CheckCircle2,
-  ExternalLink,
   Lock,
-  Layers,
   Clock,
   AlertTriangle,
   Loader2,
+  FileText,
+  Share2,
+  BookOpen,
+  HelpCircle,
 } from "lucide-react";
 
 interface TenantDashboardProps {
@@ -95,7 +96,7 @@ export function TenantDashboardClient({
         setShowKeyModal(true);
       }
     } catch (err) {
-      console.error("Failed to generate API key:", err);
+      console.error("Failed to generate key:", err);
     } finally {
       setIsGeneratingKey(false);
     }
@@ -138,14 +139,14 @@ export function TenantDashboardClient({
     }
   };
 
-  const activeKeySample = keyPrefix || "gs_live_YOUR_API_KEY";
+  const activeKeySample = keyPrefix || "gs_live_YOUR_SECRET_KEY";
 
   const curlExample = `curl -X POST https://api.growthservice.in/api/generate-blog \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: ${activeKeySample}" \\
   -d '{
-    "topic": "Scaling Programmatic Content with ${profile.site_name}",
-    "keywords": ["SEO", "Content Automation"],
+    "topic": "Proven Strategies to Grow Website Authority in 2026",
+    "keywords": ["SEO", "Organic Traffic"],
     "wordCount": 1000
   }'`;
 
@@ -156,12 +157,13 @@ const client = new BlogClient({
   endpoint: "https://api.growthservice.in"
 });
 
+// Publishes SEO blog directly
 const post = await client.generateBlog({
-  topic: "Automating Organic Foot Traffic",
+  topic: "Proven Strategies to Grow Website Authority in 2026",
   wordCount: 1200
 });
 
-console.log(post.title, post.content);`;
+console.log("Ready:", post.title);`;
 
   const quotaPercent = Math.min(100, Math.round(((profile.used_quota || 0) / (profile.monthly_quota || 1)) * 100));
 
@@ -193,7 +195,7 @@ console.log(post.title, post.content);`;
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-400 border-emerald-500/30">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Tenant Active
+              Site Active
             </Badge>
 
             <Button asChild variant="outline" size="sm" className="text-xs">
@@ -212,23 +214,23 @@ console.log(post.title, post.content);`;
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              Tenant Dashboard
+              Client Content Dashboard
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage your live API keys, brand voice, quota usage, and developer endpoints.
+              Manage your website connection key, brand voice, monthly articles, and publishing settings.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-mono">
-              Site ID: {profile.id.slice(0, 8)}...
+              Account ID: {profile.id.slice(0, 8)}...
             </span>
           </div>
         </div>
 
-        {/* Top Grid: API Key Management & Quota Card */}
+        {/* Top Grid: Website Key Management & Quota Card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* API KEY CARD (The Core Requirement) */}
+          {/* WEBSITE CONNECTION KEY CARD */}
           <Card className="lg:col-span-2 border-border/80 bg-card/60 backdrop-blur-xl relative shadow-lg">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -237,20 +239,20 @@ console.log(post.title, post.content);`;
                     <Key className="h-4 w-4 text-indigo-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-base font-bold">Production API Key</CardTitle>
+                    <CardTitle className="text-base font-bold">Website Connection Key</CardTitle>
                     <CardDescription className="text-xs">
-                      Authenticates programmatic blog generation requests via the x-api-key header.
+                      Connect your WordPress, Shopify, Webflow, or custom site to automatically receive published articles.
                     </CardDescription>
                   </div>
                 </div>
 
                 <Badge
                   variant={keyPrefix ? "outline" : "secondary"}
-                  className={`text-[11px] font-mono ${
+                  className={`text-[11px] font-medium ${
                     keyPrefix ? "text-emerald-400 border-emerald-500/30" : "text-muted-foreground"
                   }`}
                 >
-                  {keyPrefix ? "Key Active" : "No Key Active"}
+                  {keyPrefix ? "Key Ready" : "No Key Generated"}
                 </Badge>
               </div>
             </CardHeader>
@@ -264,20 +266,20 @@ console.log(post.title, post.content);`;
                       <span>{keyPrefix}</span>
                     </div>
                     <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                      SHA-256 HASHED
+                      SECURED &amp; PROTECTED
                     </Badge>
                   </div>
 
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Your full key is hashed in our distributed database. To generate a new credential, click regenerate below (will invalidate previous key).
+                    Your key is securely encrypted. To rotate or generate a new secret credential, click regenerate below (will replace previous connection).
                   </p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 p-5 text-center space-y-2">
                   <Key className="h-8 w-8 text-muted-foreground mx-auto opacity-50" />
-                  <h4 className="text-sm font-semibold text-foreground">No API Key Generated Yet</h4>
+                  <h4 className="text-sm font-semibold text-foreground">No Connection Key Generated Yet</h4>
                   <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                    To maintain strict security standards, API keys are created strictly on-demand. Click below to generate your secret production token.
+                    To maintain strict privacy, your secret key is created only when you request it. Click below to generate your private connection token.
                   </p>
                 </div>
               )}
@@ -286,7 +288,7 @@ console.log(post.title, post.content);`;
             <CardFooter className="border-t border-border/40 pt-4 flex items-center justify-between">
               <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Zero in-memory leaks • 10k concurrent safe</span>
+                <span>Enterprise grade security • 100% private</span>
               </div>
 
               <Button
@@ -308,7 +310,7 @@ console.log(post.title, post.content);`;
                 ) : (
                   <>
                     <Key className="h-3.5 w-3.5" />
-                    Generate Live API Key
+                    Generate Connection Key
                   </>
                 )}
               </Button>
@@ -324,13 +326,13 @@ console.log(post.title, post.content);`;
                     <BarChart3 className="h-4 w-4 text-emerald-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-base font-bold">Monthly Quota</CardTitle>
+                    <CardTitle className="text-base font-bold">Monthly Articles</CardTitle>
                     <CardDescription className="text-xs">
                       Resets automatically every 30 days
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-[10px] font-mono">
+                <Badge variant="outline" className="text-[10px]">
                   Starter Plan
                 </Badge>
               </div>
@@ -341,54 +343,76 @@ console.log(post.title, post.content);`;
                 <span className="text-3xl font-extrabold text-foreground">
                   {profile.used_quota || 0}
                 </span>
-                <span className="text-xs text-muted-foreground font-mono">
-                  / {profile.monthly_quota} blogs
+                <span className="text-xs text-muted-foreground">
+                  / {profile.monthly_quota} articles published
                 </span>
               </div>
 
               <Progress value={quotaPercent} className="h-2 bg-muted/60" />
 
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{quotaPercent}% Quota Consumed</span>
+                <span>{quotaPercent}% Used This Cycle</span>
                 <span>{(profile.monthly_quota || 0) - (profile.used_quota || 0)} Remaining</span>
               </div>
             </CardContent>
 
             <CardFooter className="border-t border-border/40 pt-4 text-[11px] text-muted-foreground">
-              Tip: Configure a BYO Groq or Gemini key below to unlock unlimited generations.
+              Need higher monthly volume? Upgrade your plan or connect custom accounts anytime.
             </CardFooter>
           </Card>
         </div>
 
-        {/* Developer Integration Snippets */}
+        {/* Website Publishing & Quick Integration */}
         <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Terminal className="h-4 w-4 text-indigo-400" />
-                <CardTitle className="text-base font-bold">Developer Integration Contract</CardTitle>
+                <Share2 className="h-4 w-4 text-indigo-400" />
+                <CardTitle className="text-base font-bold">Publish to Your Website</CardTitle>
               </div>
-              <Badge variant="outline" className="font-mono text-[11px]">
-                POST /api/generate-blog
+              <Badge variant="outline" className="text-[11px]">
+                Direct Webhook &amp; API Ready
               </Badge>
             </div>
             <CardDescription className="text-xs">
-              Pre-configured code snippets for your site profile. Paste directly into your codebase.
+              Push published articles directly into your content management system or custom codebase.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="pt-2">
-            <Tabs defaultValue="curl" className="w-full">
+            <Tabs defaultValue="guide" className="w-full">
               <TabsList className="bg-muted/40 p-1 mb-3">
+                <TabsTrigger value="guide" className="text-xs gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  Quick Setup Guide
+                </TabsTrigger>
                 <TabsTrigger value="curl" className="text-xs font-mono gap-1.5">
                   <Terminal className="h-3.5 w-3.5" />
-                  cURL Request
+                  cURL Webhook
                 </TabsTrigger>
                 <TabsTrigger value="sdk" className="text-xs font-mono gap-1.5">
                   <Code2 className="h-3.5 w-3.5" />
-                  TypeScript SDK
+                  Node.js / SDK
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="guide" className="p-4 bg-muted/20 rounded-lg border border-border/40 space-y-3 text-xs text-muted-foreground">
+                <div className="font-semibold text-foreground text-sm">3 Easy Ways to Connect Your Blog:</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="border border-border/60 rounded-md p-3 bg-card/40">
+                    <span className="font-bold text-foreground">1. WordPress Plugin</span>
+                    <p className="mt-1 text-[11px]">Paste your Connection Key in your WordPress plugin settings for 100% automated post drafts.</p>
+                  </div>
+                  <div className="border border-border/60 rounded-md p-3 bg-card/40">
+                    <span className="font-bold text-foreground">2. Shopify &amp; Webflow</span>
+                    <p className="mt-1 text-[11px]">Connect via Zapier or Make using our standardized webhook endpoint to publish to any CMS.</p>
+                  </div>
+                  <div className="border border-border/60 rounded-md p-3 bg-card/40">
+                    <span className="font-bold text-foreground">3. Custom Next.js / React</span>
+                    <p className="mt-1 text-[11px]">Use our lightweight JavaScript SDK to query and render high-ranking SEO content directly.</p>
+                  </div>
+                </div>
+              </TabsContent>
 
               <TabsContent value="curl" className="relative">
                 <Button
@@ -431,67 +455,8 @@ console.log(post.title, post.content);`;
           </CardContent>
         </Card>
 
-        {/* Configuration Tabs: BYO-Key & Brand DNA */}
+        {/* Configuration: Brand Voice & Custom Accounts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* BYO-KEY CARD */}
-          <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                  <Database className="h-4 w-4 text-purple-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-base font-bold">BYO-Key (Bring Your Own Keys)</CardTitle>
-                  <CardDescription className="text-xs">
-                    Route requests through your own Groq or Gemini API keys to bypass platform rate limits.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4 pt-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Groq API Key (Primary)</label>
-                <Input
-                  type="password"
-                  placeholder="gsk_..."
-                  value={byoGroq}
-                  onChange={(e) => setByoGroq(e.target.value)}
-                  className="bg-background/50 border-border/80 text-xs font-mono"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">Gemini API Key (Fallback)</label>
-                <Input
-                  type="password"
-                  placeholder="AIzaSy..."
-                  value={byoGemini}
-                  onChange={(e) => setByoGemini(e.target.value)}
-                  className="bg-background/50 border-border/80 text-xs font-mono"
-                />
-              </div>
-
-              {byoSuccess && (
-                <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-2 text-xs text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  BYO API Keys saved successfully.
-                </div>
-              )}
-            </CardContent>
-
-            <CardFooter className="border-t border-border/40 pt-4 flex justify-end">
-              <Button
-                size="sm"
-                onClick={handleSaveByoKeys}
-                disabled={isSavingByo}
-                className="text-xs font-semibold"
-              >
-                {isSavingByo ? "Saving..." : "Save BYO Keys"}
-              </Button>
-            </CardFooter>
-          </Card>
-
           {/* BRAND DNA CARD */}
           <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
             <CardHeader className="pb-3">
@@ -500,9 +465,9 @@ console.log(post.title, post.content);`;
                   <Sliders className="h-4 w-4 text-pink-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-base font-bold">Brand DNA &amp; Persona</CardTitle>
+                  <CardTitle className="text-base font-bold">Brand Voice &amp; Messaging</CardTitle>
                   <CardDescription className="text-xs">
-                    Fine-tune the voice and contextual knowledge woven into your articles.
+                    Fine-tune the vocabulary and unique expertise woven into your published articles.
                   </CardDescription>
                 </div>
               </div>
@@ -510,7 +475,7 @@ console.log(post.title, post.content);`;
 
             <CardContent className="space-y-3 pt-2">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-foreground">Brand Knowledge Summary</label>
+                <label className="text-xs font-semibold text-foreground">Business Overview &amp; Solutions</label>
                 <Textarea
                   rows={2}
                   value={brandKnowledge}
@@ -521,7 +486,7 @@ console.log(post.title, post.content);`;
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-foreground">Tone</label>
+                  <label className="text-xs font-semibold text-foreground">Tone of Voice</label>
                   <Input
                     value={tone}
                     onChange={(e) => setTone(e.target.value)}
@@ -553,18 +518,77 @@ console.log(post.title, post.content);`;
                 disabled={isSavingBrand}
                 className="text-xs font-semibold"
               >
-                {isSavingBrand ? "Saving..." : "Update Brand"}
+                {isSavingBrand ? "Saving..." : "Save Brand Settings"}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* CUSTOM AI ACCOUNTS (BYO KEY) */}
+          <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                  <Database className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-bold">Custom AI Accounts (Optional)</CardTitle>
+                  <CardDescription className="text-xs">
+                    Connect your own Groq or Gemini AI keys for unlimited volume beyond plan limits.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Groq API Key (Optional)</label>
+                <Input
+                  type="password"
+                  placeholder="gsk_..."
+                  value={byoGroq}
+                  onChange={(e) => setByoGroq(e.target.value)}
+                  className="bg-background/50 border-border/80 text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Google Gemini Key (Optional)</label>
+                <Input
+                  type="password"
+                  placeholder="AIzaSy..."
+                  value={byoGemini}
+                  onChange={(e) => setByoGemini(e.target.value)}
+                  className="bg-background/50 border-border/80 text-xs font-mono"
+                />
+              </div>
+
+              {byoSuccess && (
+                <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-2 text-xs text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Custom account keys saved successfully.
+                </div>
+              )}
+            </CardContent>
+
+            <CardFooter className="border-t border-border/40 pt-4 flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleSaveByoKeys}
+                disabled={isSavingByo}
+                className="text-xs font-semibold"
+              >
+                {isSavingByo ? "Saving..." : "Save Custom Keys"}
               </Button>
             </CardFooter>
           </Card>
         </div>
 
-        {/* Recent Generations Logs */}
+        {/* Recent Published Articles */}
         <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">Recent Generation Telemetry</CardTitle>
+            <CardTitle className="text-base font-bold">Recent Published Articles</CardTitle>
             <CardDescription className="text-xs">
-              Real-time audit log of all blog posts generated for this tenant.
+              History of all articles generated and delivered for this website.
             </CardDescription>
           </CardHeader>
 
@@ -572,21 +596,20 @@ console.log(post.title, post.content);`;
             {logs && logs.length > 0 ? (
               <div className="divide-y divide-border/40 text-xs">
                 {logs.slice(0, 5).map((log, idx) => (
-                  <div key={log.id || idx} className="py-2.5 flex items-center justify-between">
+                  <div key={log.id || idx} className="py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span
                         className={`h-2 w-2 rounded-full ${
                           log.status === "success" ? "bg-emerald-400" : "bg-red-400"
                         }`}
                       />
-                      <span className="font-mono text-foreground">{log.model || "openai/gpt-oss-120b"}</span>
+                      <span className="font-medium text-foreground">Article #{idx + 1}</span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-muted-foreground font-mono text-[11px]">
-                      <span>{log.latency_ms || 0}ms</span>
-                      <span>{log.total_tokens || 0} tok</span>
-                      <Badge variant="outline" className="text-[10px] uppercase">
-                        {log.provider_used || "groq"}
+                    <div className="flex items-center gap-4 text-muted-foreground text-[11px]">
+                      <span>{log.latency_ms ? `${Math.round(log.latency_ms / 1000)}s` : "< 2s"} generation</span>
+                      <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30">
+                        {log.status === "success" ? "Ready & Published" : "Processing"}
                       </Badge>
                     </div>
                   </div>
@@ -594,14 +617,14 @@ console.log(post.title, post.content);`;
               </div>
             ) : (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                No generations recorded yet. Use the cURL or SDK snippet above to generate your first article!
+                No articles published yet. Connect your site using your key above to start publishing!
               </div>
             )}
           </CardContent>
         </Card>
       </main>
 
-      {/* ONE-TIME API KEY REVEAL DIALOG */}
+      {/* ONE-TIME CONNECTION KEY REVEAL DIALOG */}
       <Dialog open={showKeyModal} onOpenChange={setShowKeyModal}>
         <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-md p-6">
           <DialogHeader>
@@ -609,10 +632,10 @@ console.log(post.title, post.content);`;
               <Key className="h-5 w-5 text-emerald-400" />
             </div>
             <DialogTitle className="text-lg font-bold text-foreground">
-              Your New Production API Key
+              Your Secret Connection Key
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Please copy your secret key now. For your security, it will NOT be shown again.
+              Copy this secret key to connect your website or plugin. For your security, it will not be shown again.
             </DialogDescription>
           </DialogHeader>
 
@@ -624,7 +647,7 @@ console.log(post.title, post.content);`;
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-[11px] text-amber-300 flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
               <span>
-                If you lose this key, you must regenerate it. We only store an irreversible SHA-256 hash in our database.
+                Please save this key securely. If you ever lose it, you can easily regenerate a new connection key anytime from this dashboard.
               </span>
             </div>
           </div>
@@ -637,7 +660,7 @@ console.log(post.title, post.content);`;
               onClick={() => setShowKeyModal(false)}
               className="text-xs"
             >
-              I have saved it
+              I Have Saved It
             </Button>
 
             <Button
@@ -654,7 +677,7 @@ console.log(post.title, post.content);`;
               ) : (
                 <>
                   <Copy className="h-3.5 w-3.5" />
-                  Copy API Key
+                  Copy Connection Key
                 </>
               )}
             </Button>
