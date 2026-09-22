@@ -24,11 +24,31 @@ import {
   Users,
 } from "lucide-react";
 
+import { createClient } from "@/lib/supabase/client";
+
 export default function OnboardPage() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.push("/signup");
+        } else {
+          setUserEmail(user.email || null);
+        }
+      } catch {
+        // Allow in development/testing
+      }
+    }
+    checkAuth();
+  }, [router]);
 
   // Form State
   const [siteName, setSiteName] = useState("");
@@ -96,10 +116,24 @@ export default function OnboardPage() {
         </Link>
 
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span>Already have an account?</span>
-          <Button asChild variant="outline" size="sm" className="text-xs">
-            <Link href="/admin">Client Sign In</Link>
-          </Button>
+          {userEmail ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium text-[11px]">
+                <CheckCircle2 className="h-3 w-3" />
+                Verified: {userEmail}
+              </span>
+              <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground h-7">
+                <Link href="/auth/signout">Sign Out</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span>Already have an account?</span>
+              <Button asChild variant="outline" size="sm" className="text-xs">
+                <Link href="/login">Sign In</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 

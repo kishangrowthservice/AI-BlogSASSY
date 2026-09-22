@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getTenantDashboardData } from "@/lib/serverActions";
+import { getTenantDashboardData, getUserPrimarySiteId } from "@/lib/serverActions";
+import { createClient } from "@/lib/supabase/server";
 import { TenantDashboardClient } from "./TenantDashboardClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, PlusCircle } from "lucide-react";
+import { Sparkles, PlusCircle } from "lucide-react";
 
 interface DashboardPageProps {
   searchParams: Promise<{ siteId?: string }>;
@@ -12,7 +13,41 @@ interface DashboardPageProps {
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = await searchParams;
-  const siteId = params.siteId;
+  let siteId = params.siteId;
+  let currentUserEmail: string | null = null;
+  let shouldRedirectToOnboard = false;
+  let shouldRedirectToLogin = false;
+
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      currentUserEmail = user.email || null;
+      if (!siteId) {
+        const primarySiteId = await getUserPrimarySiteId();
+        if (primarySiteId) {
+          siteId = primarySiteId;
+        } else {
+          shouldRedirectToOnboard = true;
+        }
+      }
+    } else {
+      if (!siteId) {
+        shouldRedirectToLogin = true;
+      }
+    }
+  } catch {
+    // Session lookup fallback
+  }
+
+  if (shouldRedirectToOnboard) {
+    redirect("/onboard");
+  }
+
+  if (shouldRedirectToLogin) {
+    redirect("/login");
+  }
 
   if (!siteId) {
     return (
@@ -25,7 +60,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <CardHeader className="p-0">
             <CardTitle className="text-xl font-bold">No Site Selected</CardTitle>
             <CardDescription className="text-xs">
-              To view your tenant dashboard, please register a site profile or access via your dedicated tenant link.
+              To view your client dashboard, please register a website or access via your dedicated client link.
             </CardDescription>
           </CardHeader>
 
@@ -81,6 +116,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       initialProfile={result.profile}
       initialKeyPrefix={result.keyPrefix || null}
       initialLogs={result.recentLogs || []}
+      currentUserEmail={currentUserEmail}
     />
   );
 }

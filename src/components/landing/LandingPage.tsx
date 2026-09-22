@@ -132,8 +132,14 @@ console.log("Published:", article.title, article.url);`;
               </Link>
             </Button>
 
+            <Button asChild variant="ghost" size="sm" className="text-xs">
+              <Link href="/login">
+                Sign In
+              </Link>
+            </Button>
+
             <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
-              <Link href="/onboard">
+              <Link href="/signup">
                 Get Started Free
                 <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Link>
@@ -189,7 +195,7 @@ console.log("Published:", article.title, article.url);`;
           className="flex flex-wrap items-center justify-center gap-4 mb-16"
         >
           <Button asChild size="lg" className="h-12 px-7 text-sm font-semibold shadow-lg shadow-primary/10 gap-2 group">
-            <Link href="/onboard">
+            <Link href="/signup">
               Start Free Trial
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
@@ -693,7 +699,7 @@ console.log("Published:", article.title, article.url);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/onboard">Start Free Trial</Link>
+                <Link href="/signup">Start Free Trial</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -740,7 +746,7 @@ console.log("Published:", article.title, article.url);`;
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
-                  <Link href="/onboard">Start 14-Day Free Trial</Link>
+                  <Link href="/signup">Start 14-Day Free Trial</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -782,7 +788,7 @@ console.log("Published:", article.title, article.url);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/onboard">Get Started</Link>
+                <Link href="/signup">Get Started</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -803,7 +809,7 @@ console.log("Published:", article.title, article.url);`;
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="h-12 px-8 font-semibold shadow-lg shadow-primary/20">
-              <Link href="/onboard">
+              <Link href="/signup">
                 Start Your Free Trial
                 <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
@@ -827,8 +833,11 @@ console.log("Published:", article.title, article.url);`;
           </div>
 
           <div className="flex items-center gap-6">
-            <Link href="/onboard" className="hover:text-foreground transition-colors">
+            <Link href="/signup" className="hover:text-foreground transition-colors">
               Get Started
+            </Link>
+            <Link href="/login" className="hover:text-foreground transition-colors">
+              Sign In
             </Link>
             <Link href="/preview" className="hover:text-foreground transition-colors">
               Sample Studio

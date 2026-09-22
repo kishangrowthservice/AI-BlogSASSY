@@ -45,18 +45,21 @@ import {
   Share2,
   BookOpen,
   HelpCircle,
+  LogOut,
 } from "lucide-react";
 
 interface TenantDashboardProps {
   initialProfile: SiteProfile;
   initialKeyPrefix: string | null;
   initialLogs: any[];
+  currentUserEmail?: string | null;
 }
 
 export function TenantDashboardClient({
   initialProfile,
   initialKeyPrefix,
   initialLogs,
+  currentUserEmail,
 }: TenantDashboardProps) {
   const [profile, setProfile] = useState<SiteProfile>(initialProfile);
   const [keyPrefix, setKeyPrefix] = useState<string | null>(initialKeyPrefix);
@@ -193,6 +196,12 @@ console.log("Ready:", post.title);`;
           </div>
 
           <div className="flex items-center gap-3">
+            {currentUserEmail && (
+              <span className="hidden md:inline-flex text-xs text-muted-foreground font-medium border border-border/40 px-2.5 py-1 rounded-full bg-muted/20">
+                {currentUserEmail}
+              </span>
+            )}
+
             <Badge variant="outline" className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-400 border-emerald-500/30">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
               Site Active
@@ -202,6 +211,13 @@ console.log("Ready:", post.title);`;
               <Link href="/preview">
                 <Sparkles className="h-3.5 w-3.5 mr-1 text-purple-400" />
                 Live Studio
+              </Link>
+            </Button>
+
+            <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/auth/signout">
+                <LogOut className="h-3.5 w-3.5 mr-1" />
+                Sign Out
               </Link>
             </Button>
           </div>

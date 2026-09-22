@@ -21,6 +21,7 @@ export interface SiteProfile {
   gemini_model: string;
   byo_groq_api_key?: string;
   byo_gemini_api_key?: string;
+  user_id?: string | null;
   created_at: string;
   updated_at: string;
 }

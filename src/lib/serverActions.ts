@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import { getDbClient, hashApiKey, localSiteProfiles } from "./db";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SiteProfile } from "./types";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
 
@@ -223,10 +224,21 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
 
     const cleanedDomain = input.domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 
+    // Resolve current authenticated Supabase user if present
+    let authUserId: string | null = null;
+    try {
+      const serverAuth = await createSupabaseServerClient();
+      const { data: { user } } = await serverAuth.auth.getUser();
+      if (user?.id) authUserId = user.id;
+    } catch {
+      // In test/non-HTTP context
+    }
+
     const payload: any = {
       site_name: input.site_name.trim(),
       domain: cleanedDomain,
       api_key_hash: null,
+      user_id: authUserId,
       is_active: true,
       brand_knowledge: input.brand_knowledge.trim(),
       tone: input.tone?.trim() || "authoritative, actionable, conversion-focused",
@@ -445,6 +457,40 @@ export async function updateTenantBrandAction(
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || "Failed to update brand profile" };
+  }
+}
+
+/**
+ * Resolves the primary site ID for the current authenticated user.
+ */
+export async function getUserPrimarySiteId(): Promise<string | null> {
+  try {
+    const serverAuth = await createSupabaseServerClient();
+    const { data: { user } } = await serverAuth.auth.getUser();
+    if (!user) return null;
+
+    try {
+      const db = getDbClient();
+      const { data, error } = await db
+        .from("site_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!error && data?.id) return data.id;
+    } catch {
+      // Local fallback
+    }
+
+    for (const [id, prof] of localSiteProfiles.entries()) {
+      if (prof.user_id === user.id) return id;
+    }
+
+    return null;
+  } catch {
+    return null;
   }
 }
 

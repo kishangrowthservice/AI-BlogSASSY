@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS site_profiles (
   gemini_model TEXT NOT NULL DEFAULT 'gemini-2.0-flash',
   byo_groq_api_key TEXT,
   byo_gemini_api_key TEXT,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS site_profiles (
 -- Indexes for site_profiles
 CREATE INDEX IF NOT EXISTS idx_site_profiles_api_key_hash ON site_profiles (api_key_hash);
 CREATE INDEX IF NOT EXISTS idx_site_profiles_key_prefix ON site_profiles (key_prefix);
+CREATE INDEX IF NOT EXISTS idx_site_profiles_user_id ON site_profiles (user_id);
 CREATE INDEX IF NOT EXISTS idx_site_profiles_active ON site_profiles (is_active);
 
 -- Automatic updated_at trigger
