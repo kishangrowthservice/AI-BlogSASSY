@@ -250,32 +250,29 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       gemini_model: "gemini-2.0-flash",
     };
 
-    let profile: SiteProfile | null = null;
-    try {
-      const supabase = getDbClient();
-      const { data, error } = await supabase
-        .from("site_profiles")
-        .insert([payload])
-        .select("*")
-        .single();
+    const supabase = getDbClient();
+    const { data, error } = await supabase
+      .from("site_profiles")
+      .insert([payload])
+      .select("*")
+      .single();
 
-      if (!error && data) {
-        profile = data as SiteProfile;
-      }
-    } catch {
-      // Remote DB fallback
+    if (error) {
+      console.error("Supabase site profile insert error:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to create brand account in database",
+      };
     }
 
-    if (!profile) {
-      const mockId = crypto.randomUUID();
-      profile = {
-        id: mockId,
-        ...payload,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as SiteProfile;
+    if (!data) {
+      return {
+        success: false,
+        error: "Failed to retrieve created brand account",
+      };
     }
 
+    const profile = data as SiteProfile;
     localSiteProfiles.set(profile.id, profile);
 
     return {
