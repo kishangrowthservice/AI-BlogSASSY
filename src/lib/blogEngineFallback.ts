@@ -1,6 +1,6 @@
 import Groq from "groq-sdk";
 import { GoogleGenAI } from "@google/genai";
-import { buildBlogPostPrompt, blogPostResponseSchema } from "./blogEngine";
+import { buildBlogPostPrompt, blogPostResponseSchema, geminiBlogPostResponseSchema } from "./blogEngine";
 import type { SiteProfile, GenerateBlogParams, GeneratedBlogPost, GeneratedBlogPostWithTelemetry, GenerationTelemetry } from "./types";
 
 let groqInstance: Groq | null = null;
@@ -136,6 +136,7 @@ async function generateWithGemini(
     contents: prompt,
     config: {
       responseMimeType: "application/json",
+      responseSchema: geminiBlogPostResponseSchema,
       temperature: 0.7,
     },
   });
@@ -175,7 +176,7 @@ export async function generateBlogPostResilient(
 ): Promise<GeneratedBlogPostWithTelemetry> {
   const prompt = buildBlogPostPrompt(siteProfile, params);
   const groqModel = params.model || siteProfile.groq_model || "openai/gpt-oss-120b";
-  const geminiModel = siteProfile.gemini_model || "gemini-2.0-flash";
+  const geminiModel = siteProfile.gemini_model || "gemini-2.5-flash-lite";
 
   // Support explicit Gemini fallback or default provider override
   const preferGemini =

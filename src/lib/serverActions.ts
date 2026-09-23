@@ -64,7 +64,7 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
       monthly_quota: input.monthly_quota && input.monthly_quota > 0 ? input.monthly_quota : 100,
       used_quota: 0,
       groq_model: input.groq_model || "openai/gpt-oss-120b",
-      gemini_model: input.gemini_model || "gemini-2.0-flash",
+      gemini_model: input.gemini_model || "gemini-2.5-flash-lite",
       byo_groq_api_key: input.byo_groq_api_key?.trim() || undefined,
       byo_gemini_api_key: input.byo_gemini_api_key?.trim() || undefined,
     };
@@ -252,7 +252,7 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       monthly_quota: 25, // Starter free quota
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-2.0-flash",
+      gemini_model: "gemini-2.5-flash-lite",
     };
 
     const supabase = getDbClient();

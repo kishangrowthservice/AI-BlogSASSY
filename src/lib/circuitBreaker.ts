@@ -140,16 +140,9 @@ export async function recordCircuitSuccess(provider: string = "groq"): Promise<v
 
   try {
     const supabase = getDbClient();
-    await supabase
-      .from("circuit_breaker_state")
-      .update({
-        consecutive_failures: 0,
-        state: "closed",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("provider", provider);
-  } catch (err: unknown) {
-    // Graceful fallback
+    await supabase.rpc("record_circuit_success", { p_provider: provider });
+  } catch {
+    // Local state above already reflects success — graceful degradation.
   }
 }
 
@@ -159,7 +152,6 @@ export async function recordCircuitSuccess(provider: string = "groq"): Promise<v
 export async function recordCircuitFailure(provider: string = "groq"): Promise<void> {
   const now = Date.now();
   localCircuitState.consecutiveFailures += 1;
-
   if (localCircuitState.consecutiveFailures >= localCircuitState.failureThreshold) {
     localCircuitState.state = "open";
     localCircuitState.openedAt = now;
@@ -167,27 +159,8 @@ export async function recordCircuitFailure(provider: string = "groq"): Promise<v
 
   try {
     const supabase = getDbClient();
-    const { data } = await supabase
-      .from("circuit_breaker_state")
-      .select("consecutive_failures, failure_threshold")
-      .eq("provider", provider)
-      .single();
-
-    const currentFailures = (data?.consecutive_failures || 0) + 1;
-    const threshold = data?.failure_threshold || 3;
-    const shouldOpen = currentFailures >= threshold;
-
-    await supabase
-      .from("circuit_breaker_state")
-      .update({
-        consecutive_failures: currentFailures,
-        state: shouldOpen ? "open" : "closed",
-        opened_at: shouldOpen ? new Date().toISOString() : undefined,
-        last_failure_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("provider", provider);
-  } catch (err: unknown) {
-    // Graceful fallback
+    await supabase.rpc("record_circuit_failure", { p_provider: provider });
+  } catch {
+    // Local state above already reflects the failure — graceful degradation.
   }
 }

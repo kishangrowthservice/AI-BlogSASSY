@@ -34,7 +34,7 @@ const testProfile: SiteProfile = {
   monthly_quota: 50,
   used_quota: 10,
   groq_model: "openai/gpt-oss-120b",
-  gemini_model: "gemini-2.0-flash",
+  gemini_model: "gemini-2.5-flash-lite",
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

@@ -44,7 +44,7 @@ Offices: Jaipur (HQ), Vrindavan, Nepal. Active across 24+ Tier-1/Tier-2 Indian c
   monthly_quota: 100,
   used_quota: 5,
   groq_model: "openai/gpt-oss-120b",
-  gemini_model: "gemini-2.0-flash",
+  gemini_model: "gemini-2.5-flash-lite",
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

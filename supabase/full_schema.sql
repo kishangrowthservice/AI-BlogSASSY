@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS site_profiles (
   monthly_quota INT NOT NULL DEFAULT 100,
   used_quota INT NOT NULL DEFAULT 0,
   groq_model TEXT NOT NULL DEFAULT 'openai/gpt-oss-120b',
-  gemini_model TEXT NOT NULL DEFAULT 'gemini-2.0-flash',
+  gemini_model TEXT NOT NULL DEFAULT 'gemini-2.5-flash-lite',
   byo_groq_api_key TEXT,
   byo_gemini_api_key TEXT,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,

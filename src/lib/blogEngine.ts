@@ -118,3 +118,15 @@ export const blogPostResponseSchema = {
     additionalProperties: false,
   },
 } as const;
+
+export const geminiBlogPostResponseSchema = {
+  type: "OBJECT",
+  properties: {
+    title: { type: "STRING" },
+    metaDescription: { type: "STRING" },
+    content: { type: "STRING" },
+    suggestedTags: { type: "ARRAY", items: { type: "STRING" } },
+  },
+  required: ["title", "metaDescription", "content", "suggestedTags"],
+} as const;
+

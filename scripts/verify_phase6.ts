@@ -70,7 +70,7 @@ async function runPhase6Verification() {
     monthly_quota: 500,
     used_quota: 10,
     groq_model: "openai/gpt-oss-120b",
-    gemini_model: "gemini-2.0-flash",
+    gemini_model: "gemini-2.5-flash-lite",
     byo_groq_api_key: "gsk_custom_tenant_key_enterprise",
     byo_gemini_api_key: "AIzaSyCustomGeminiKey",
     created_at: new Date().toISOString(),

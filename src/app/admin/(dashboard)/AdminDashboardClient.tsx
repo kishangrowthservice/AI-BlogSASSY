@@ -802,7 +802,7 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Model Name:</span>
-                  <span className="font-mono text-foreground">gemini-2.0-flash</span>
+                  <span className="font-mono text-foreground">gemini-2.5-flash-lite</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Schema Enforcement:</span>
