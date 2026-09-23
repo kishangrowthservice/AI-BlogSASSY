@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { cookies } from "next/headers";
 import { getDbClient, hashApiKey, localSiteProfiles } from "./db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
-import type { SiteProfile } from "./types";
+import type { SiteProfile, GenerationLog } from "./types";
 import { toSafeSiteProfile, type SafeSiteProfile } from "./sanitize";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
 
@@ -206,7 +206,7 @@ export interface TenantDashboardData {
   success: boolean;
   profile?: SafeSiteProfile;
   keyPrefix?: string | null;
-  recentLogs?: any[];
+  recentLogs?: GenerationLog[];
   error?: string;
 }
 
@@ -360,7 +360,7 @@ export async function getTenantDashboardData(siteId: string): Promise<TenantDash
     }
 
     let profile: SiteProfile | null = null;
-    let recentLogs: any[] = [];
+    let recentLogs: GenerationLog[] = [];
 
     try {
       const supabase = getDbClient();

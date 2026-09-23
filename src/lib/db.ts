@@ -130,7 +130,12 @@ export async function recordGenerationLog(log: import("./types").GenerationLog):
     const supabase = getDbClient();
     const { error } = await supabase.from("generation_logs").insert([log]);
     if (error) {
-      console.error("[db] Error recording generation_log:", error.message);
+      if (log.title && error.message.includes("title")) {
+        const { title: _, ...rest } = log;
+        await supabase.from("generation_logs").insert([rest]);
+      } else {
+        console.error("[db] Error recording generation_log:", error.message);
+      }
     }
   } catch (err: unknown) {
     console.error("[db] Failed to record generation log:", err);

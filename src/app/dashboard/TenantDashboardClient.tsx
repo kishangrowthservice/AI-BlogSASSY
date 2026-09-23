@@ -24,6 +24,7 @@ import {
   updateTenantBrandAction,
 } from "@/lib/serverActions";
 import type { SafeSiteProfile } from "@/lib/sanitize";
+import type { GenerationLog } from "@/lib/types";
 import {
   Key,
   Sparkles,
@@ -51,7 +52,7 @@ import {
 interface TenantDashboardProps {
   initialProfile: SafeSiteProfile;
   initialKeyPrefix: string | null;
-  initialLogs: any[];
+  initialLogs: GenerationLog[];
   currentUserEmail?: string | null;
 }
 
@@ -63,7 +64,16 @@ export function TenantDashboardClient({
 }: TenantDashboardProps) {
   const [profile, setProfile] = useState<SafeSiteProfile>(initialProfile);
   const [keyPrefix, setKeyPrefix] = useState<string | null>(initialKeyPrefix);
-  const [logs, setLogs] = useState<any[]>(initialLogs);
+  const [logs, setLogs] = useState<GenerationLog[]>(initialLogs);
+  const [apiOrigin, setApiOrigin] = useState("https://api.growthservice.in");
+
+  React.useEffect(() => {
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      setApiOrigin(process.env.NEXT_PUBLIC_API_URL);
+    } else if (typeof window !== "undefined" && window.location.origin) {
+      setApiOrigin(window.location.origin);
+    }
+  }, []);
 
   // Key Generation State
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
@@ -144,7 +154,7 @@ export function TenantDashboardClient({
 
   const activeKeySample = keyPrefix || "gs_live_YOUR_SECRET_KEY";
 
-  const curlExample = `curl -X POST https://api.growthservice.in/api/generate-blog \\
+  const curlExample = `curl -X POST ${apiOrigin}/api/generate-blog \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: ${activeKeySample}" \\
   -d '{
@@ -153,11 +163,11 @@ export function TenantDashboardClient({
     "wordCount": 1000
   }'`;
 
-  const sdkExample = `import { BlogClient } from "@growthservice/blog-client";
+  const sdkExample = `import { BlogClient } from "@growthservice/blog-client"; // Coming soon
 
 const client = new BlogClient({
   apiKey: "${activeKeySample}",
-  endpoint: "https://api.growthservice.in"
+  endpoint: "${apiOrigin}"
 });
 
 // Publishes SEO blog directly
@@ -208,7 +218,7 @@ console.log("Ready:", post.title);`;
             </Badge>
 
             <Button asChild variant="outline" size="sm" className="text-xs">
-              <Link href="/preview">
+              <Link href={revealedRawKey ? `/preview?apiKey=${encodeURIComponent(revealedRawKey)}` : "/preview"}>
                 <Sparkles className="h-3.5 w-3.5 mr-1 text-purple-400" />
                 Live Studio
               </Link>
@@ -619,7 +629,9 @@ console.log("Ready:", post.title);`;
                           log.status === "success" ? "bg-emerald-400" : "bg-red-400"
                         }`}
                       />
-                      <span className="font-medium text-foreground">Article #{idx + 1}</span>
+                      <span className="font-medium text-foreground truncate max-w-[200px] sm:max-w-md">
+                        {log.title || `Article #${idx + 1}`}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-4 text-muted-foreground text-[11px]">

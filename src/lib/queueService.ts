@@ -161,6 +161,7 @@ export async function processNextQueueJobs(
 
       await recordGenerationLog({
         site_id: job.site_id,
+        title: post.title,
         provider_used: telemetry.provider_used,
         model: telemetry.model,
         prompt_tokens: telemetry.prompt_tokens,
@@ -208,6 +209,7 @@ export async function processNextQueueJobs(
         await releaseTenantQuota(job.site_id).catch(() => {});
         await recordGenerationLog({
           site_id: job.site_id,
+          title: job.payload.topic,
           provider_used: "none",
           model: job.payload.model || "unknown",
           latency_ms: 0,

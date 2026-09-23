@@ -39,6 +39,16 @@ export default function PreviewPlaygroundPage() {
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const paramKey = params.get("apiKey");
+      if (paramKey) {
+        setApiKey(paramKey);
+      }
+    }
+  }, []);
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

@@ -2,8 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "AI Blog Engine | Multi-Tenant Content Generation Platform",
-  description: "Stateless, multi-tenant AI blog generation gateway with instant fallback and noisy-neighbor protection.",
+  title: "AI Blog SaaS | Publish SEO Articles on Autopilot",
+  description: "Grow your website traffic with AI-written, SEO-optimized blog posts. Publish in 2 minutes. Trusted by growing brands and digital agencies.",
 };
 
 export default function RootLayout({

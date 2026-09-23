@@ -55,11 +55,13 @@ export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
   React.useEffect(() => {
     try {
       const supabase = createClient();
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (user?.email) {
-          setUserEmail(user.email);
-        }
-      }).catch(() => {});
+      if (!currentUserEmail) {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user?.email) {
+            setUserEmail(user.email);
+          }
+        }).catch(() => {});
+      }
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         setUserEmail(session?.user?.email || null);
@@ -71,7 +73,7 @@ export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
     } catch {
       // Browser fallback
     }
-  }, []);
+  }, [currentUserEmail]);
 
   const integrationSnippet = `// 1-Click Publishing to Your Website
 const article = await blogEngine.publish({

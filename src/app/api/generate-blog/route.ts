@@ -23,6 +23,7 @@ export async function POST(request: Request) {
   const requestStart = Date.now();
   let siteProfile: SiteProfile | null = null;
   let quotaReserved = false;
+  let attemptedTopic: string | undefined;
 
   try {
     // 1. Authenticate via x-api-key header
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
 
     // 4. Input bounds clamping (§9 Security)
     const safeTopic = topic.trim().slice(0, 500);
+    attemptedTopic = safeTopic;
     const safeTone = typeof tone === "string" ? tone.trim().slice(0, 100) : undefined;
     const safeAudience = typeof audience === "string" ? audience.trim().slice(0, 200) : undefined;
     const safeModel = typeof model === "string" ? model.trim().slice(0, 100) : undefined;
@@ -138,6 +140,7 @@ export async function POST(request: Request) {
     // 6. Record telemetry row asynchronously in generation_logs (§5, §10, §11)
     await recordGenerationLog({
       site_id: siteProfile.id,
+      title: post.title,
       provider_used: telemetry.provider_used,
       model: telemetry.model,
       prompt_tokens: telemetry.prompt_tokens,
@@ -171,6 +174,7 @@ export async function POST(request: Request) {
 
       await recordGenerationLog({
         site_id: siteProfile.id,
+        title: attemptedTopic,
         provider_used: "none",
         model: siteProfile.groq_model || "openai/gpt-oss-120b",
         latency_ms: elapsed,

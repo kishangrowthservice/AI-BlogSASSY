@@ -77,6 +77,7 @@ export interface GeneratedBlogPostWithTelemetry {
 export interface GenerationLog {
   id?: string;
   site_id: string;
+  title?: string;
   provider_used: string;
   model: string;
   prompt_tokens?: number;

@@ -18,6 +18,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const params = await searchParams;
   let siteId = params.siteId;
   let currentUserEmail: string | null = null;
+  let currentUserId: string | null = null;
   let shouldRedirectToOnboard = false;
   let shouldRedirectToLogin = false;
 
@@ -27,6 +28,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
     if (user) {
       currentUserEmail = user.email || null;
+      currentUserId = user.id;
       if (!siteId) {
         const primarySiteId = await getUserPrimarySiteId();
         if (primarySiteId) {
@@ -36,12 +38,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         }
       }
     } else {
-      if (!siteId) {
-        shouldRedirectToLogin = true;
-      }
+      shouldRedirectToLogin = true;
     }
   } catch {
-    // Session lookup fallback
+    shouldRedirectToLogin = true;
   }
 
   if (shouldRedirectToOnboard) {
@@ -85,6 +85,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const result = await getTenantDashboardData(siteId);
+
+  // IDOR protection: prevent logged-in user from inspecting another tenant's profile
+  if (result.profile?.user_id && currentUserId && result.profile.user_id !== currentUserId) {
+    const primarySiteId = await getUserPrimarySiteId();
+    if (primarySiteId) {
+      redirect(`/dashboard?siteId=${primarySiteId}`);
+    } else {
+      redirect("/onboard");
+    }
+  }
 
   if (!result.success || !result.profile) {
     // If current authenticated user has an active primary site, auto-recover to it
