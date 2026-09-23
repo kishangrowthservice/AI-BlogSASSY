@@ -842,7 +842,7 @@ console.log("Published:", article.title, article.url);`;
             <Link href="/preview" className="hover:text-foreground transition-colors">
               Sample Studio
             </Link>
-            <Link href="/admin" className="hover:text-foreground transition-colors">
+            <Link href="/dashboard" className="hover:text-foreground transition-colors">
               Client Portal
             </Link>
           </div>

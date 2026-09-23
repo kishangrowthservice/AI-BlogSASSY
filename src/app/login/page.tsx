@@ -206,8 +206,8 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground w-full pt-1">
-                  <Link href="/admin/login" className="hover:underline text-[11px]">
-                    Admin Portal Sign In
+                  <Link href="/" className="hover:underline text-[11px] text-muted-foreground">
+                    &larr; Back to Home
                   </Link>
                   <Link href="/signup" className="text-foreground hover:underline text-[11px] font-medium">
                     Create new account &rarr;

@@ -32,6 +32,7 @@ export default function OnboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   React.useEffect(() => {
     async function checkAuth() {
@@ -42,6 +43,7 @@ export default function OnboardPage() {
           router.push("/signup");
         } else {
           setUserEmail(user.email || null);
+          setUserId(user.id);
         }
       } catch {
         // Allow in development/testing
@@ -86,6 +88,7 @@ export default function OnboardPage() {
         brand_knowledge: brandKnowledge,
         tone: tone,
         target_audience: targetAudience,
+        user_id: userId || undefined,
       });
 
       if (!res.success || !res.siteId) {

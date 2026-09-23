@@ -84,13 +84,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const result = await getTenantDashboardData(siteId);
 
   if (!result.success || !result.profile) {
+    // If current authenticated user has an active primary site, auto-recover to it
+    if (currentUserEmail) {
+      const primarySiteId = await getUserPrimarySiteId();
+      if (primarySiteId && primarySiteId !== siteId) {
+        redirect(`/dashboard?siteId=${primarySiteId}`);
+      }
+    }
+
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <Card className="max-w-md w-full border-border/80 bg-card/60 backdrop-blur-xl text-center p-6 space-y-4">
           <CardHeader className="p-0">
-            <CardTitle className="text-xl font-bold text-destructive">Site Not Found</CardTitle>
+            <CardTitle className="text-xl font-bold">Website Profile Not Found</CardTitle>
             <CardDescription className="text-xs">
-              The site ID &quot;{siteId}&quot; could not be located in our database.
+              We couldn&apos;t locate this website profile in our records.
             </CardDescription>
           </CardHeader>
 

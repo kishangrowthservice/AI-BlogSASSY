@@ -127,14 +127,20 @@ export default function PreviewPlaygroundPage() {
       {/* Top Bar */}
       <header className="sticky top-0 z-50 border-b border-border/80 bg-background/80 backdrop-blur-xl px-4 sm:px-8 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm" className="gap-1.5 text-xs">
-              <Link href="/admin">
+              <Link href="/dashboard">
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Back to Admin
+                Dashboard
               </Link>
             </Button>
-            <span className="text-sm font-bold tracking-tight">Generation Studio &amp; Theme Preview</span>
+            <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/">
+                Home
+              </Link>
+            </Button>
+            <span className="text-muted-foreground/40 hidden sm:inline">|</span>
+            <span className="text-sm font-bold tracking-tight hidden sm:inline">Generation Studio &amp; Theme Preview</span>
           </div>
 
           {post && (

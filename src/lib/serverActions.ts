@@ -183,6 +183,7 @@ export interface SelfServeOnboardInput {
   tone?: string;
   target_audience?: string;
   internal_links?: Array<{ url: string; label: string; category?: string }>;
+  user_id?: string;
 }
 
 export interface SelfServeOnboardResult {
@@ -234,11 +235,13 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       // In test/non-HTTP context
     }
 
+    const targetUserId = input.user_id || authUserId;
+
     const payload: any = {
       site_name: input.site_name.trim(),
       domain: cleanedDomain,
       api_key_hash: null,
-      user_id: authUserId,
+      user_id: targetUserId,
       is_active: true,
       brand_knowledge: input.brand_knowledge.trim(),
       tone: input.tone?.trim() || "authoritative, actionable, conversion-focused",
@@ -477,6 +480,21 @@ export async function getUserPrimarySiteId(): Promise<string | null> {
         .single();
 
       if (!error && data?.id) return data.id;
+
+      // Fallback: If tenant site was created before user_id binding or with null user_id,
+      // claim the most recent unassigned profile for this authenticated user
+      const { data: orphan } = await db
+        .from("site_profiles")
+        .select("id")
+        .is("user_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (orphan?.id) {
+        await db.from("site_profiles").update({ user_id: user.id }).eq("id", orphan.id);
+        return orphan.id;
+      }
     } catch {
       // Local fallback
     }

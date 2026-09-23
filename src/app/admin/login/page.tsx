@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -161,6 +162,14 @@ export default function AdminLoginPage() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Client login escape */}
+        <div className="text-center text-xs text-muted-foreground">
+          Looking for your client dashboard?{" "}
+          <Link href="/login" className="text-foreground hover:underline font-medium">
+            Client Sign In &rarr;
+          </Link>
+        </div>
 
         {/* Provider status strip */}
         <div className="flex items-center justify-center gap-6 text-[11px] text-muted-foreground">
