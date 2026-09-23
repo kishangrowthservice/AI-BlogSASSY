@@ -41,7 +41,11 @@ import {
   FileText,
 } from "lucide-react";
 
-export function LandingPage() {
+interface LandingPageProps {
+  currentUserEmail?: string | null;
+}
+
+export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [copiedSnippet, setCopiedSnippet] = useState(false);
 
@@ -132,18 +136,41 @@ console.log("Published:", article.title, article.url);`;
               </Link>
             </Button>
 
-            <Button asChild variant="ghost" size="sm" className="text-xs">
-              <Link href="/login">
-                Sign In
-              </Link>
-            </Button>
+            {currentUserEmail ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden md:inline-flex text-xs text-muted-foreground font-medium border border-border/40 px-2.5 py-1 rounded-full bg-muted/20">
+                  {currentUserEmail}
+                </span>
 
-            <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
-              <Link href="/signup">
-                Get Started Free
-                <ArrowRight className="h-3.5 w-3.5 ml-1" />
-              </Link>
-            </Button>
+                <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
+                  <Link href="/dashboard">
+                    Dashboard
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Link>
+                </Button>
+
+                <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
+                  <Link href="/auth/signout">
+                    Sign Out
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm" className="text-xs">
+                  <Link href="/login">
+                    Sign In
+                  </Link>
+                </Button>
+
+                <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
+                  <Link href="/signup">
+                    Get Started Free
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -195,8 +222,8 @@ console.log("Published:", article.title, article.url);`;
           className="flex flex-wrap items-center justify-center gap-4 mb-16"
         >
           <Button asChild size="lg" className="h-12 px-7 text-sm font-semibold shadow-lg shadow-primary/10 gap-2 group">
-            <Link href="/signup">
-              Start Free Trial
+            <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
+              {currentUserEmail ? "Go to Your Dashboard" : "Start Free Trial"}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
@@ -699,7 +726,9 @@ console.log("Published:", article.title, article.url);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/signup">Start Free Trial</Link>
+                <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
+                  {currentUserEmail ? "Go to Dashboard" : "Start Free Trial"}
+                </Link>
               </Button>
             </CardFooter>
           </Card>
@@ -746,7 +775,9 @@ console.log("Published:", article.title, article.url);`;
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
-                  <Link href="/signup">Start 14-Day Free Trial</Link>
+                  <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
+                    {currentUserEmail ? "Go to Dashboard" : "Start 14-Day Free Trial"}
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -788,7 +819,9 @@ console.log("Published:", article.title, article.url);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href="/signup">Get Started</Link>
+                <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
+                  {currentUserEmail ? "Go to Dashboard" : "Get Started"}
+                </Link>
               </Button>
             </CardFooter>
           </Card>
@@ -809,8 +842,8 @@ console.log("Published:", article.title, article.url);`;
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="h-12 px-8 font-semibold shadow-lg shadow-primary/20">
-              <Link href="/signup">
-                Start Your Free Trial
+              <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
+                {currentUserEmail ? "Go to Client Dashboard" : "Start Your Free Trial"}
                 <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </Button>
@@ -833,18 +866,31 @@ console.log("Published:", article.title, article.url);`;
           </div>
 
           <div className="flex items-center gap-6">
-            <Link href="/signup" className="hover:text-foreground transition-colors">
-              Get Started
-            </Link>
-            <Link href="/login" className="hover:text-foreground transition-colors">
-              Sign In
-            </Link>
-            <Link href="/preview" className="hover:text-foreground transition-colors">
-              Sample Studio
-            </Link>
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">
-              Client Portal
-            </Link>
+            {currentUserEmail ? (
+              <>
+                <Link href="/dashboard" className="hover:text-foreground transition-colors font-medium">
+                  Client Dashboard
+                </Link>
+                <Link href="/preview" className="hover:text-foreground transition-colors">
+                  Sample Studio
+                </Link>
+                <Link href="/auth/signout" className="hover:text-foreground transition-colors">
+                  Sign Out
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/signup" className="hover:text-foreground transition-colors">
+                  Get Started
+                </Link>
+                <Link href="/login" className="hover:text-foreground transition-colors">
+                  Sign In
+                </Link>
+                <Link href="/preview" className="hover:text-foreground transition-colors">
+                  Sample Studio
+                </Link>
+              </>
+            )}
           </div>
 
           <div>

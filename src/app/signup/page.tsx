@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,6 +30,21 @@ export default function SignupPage() {
   // Verification Sent State
   const [isVerificationSent, setIsVerificationSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  React.useEffect(() => {
+    async function checkSession() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          router.replace("/dashboard");
+        }
+      } catch {
+        // Session lookup fallback
+      }
+    }
+    checkSession();
+  }, [router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

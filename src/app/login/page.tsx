@@ -26,6 +26,21 @@ export default function LoginPage() {
   const [showResend, setShowResend] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
+  React.useEffect(() => {
+    async function checkSession() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          router.replace("/dashboard");
+        }
+      } catch {
+        // Session lookup fallback
+      }
+    }
+    checkSession();
+  }, [router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);

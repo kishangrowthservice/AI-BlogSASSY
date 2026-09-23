@@ -44,6 +44,18 @@ export default function OnboardPage() {
         } else {
           setUserEmail(user.email || null);
           setUserId(user.id);
+
+          // If user already has an onboarded website, send to their dashboard
+          const { data: existingSite } = await supabase
+            .from("site_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingSite?.id) {
+            router.replace(`/dashboard?siteId=${existingSite.id}`);
+          }
         }
       } catch {
         // Allow in development/testing
