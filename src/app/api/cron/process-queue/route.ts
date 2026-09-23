@@ -4,7 +4,10 @@ import { processNextQueueJobs } from "@/lib/queueService";
 
 export const runtime = "nodejs";
 
-const ADMIN_TOKEN = process.env.ADMIN_SESSION_TOKEN || "aiblog-admin-valid-session-2024";
+const ADMIN_TOKEN = process.env.ADMIN_SESSION_TOKEN;
+if (!ADMIN_TOKEN) {
+  throw new Error("Missing required environment variable: ADMIN_SESSION_TOKEN");
+}
 
 async function handleProcessQueue(request: Request) {
   try {
@@ -18,9 +21,7 @@ async function handleProcessQueue(request: Request) {
     const isAdminAuthorized = Boolean(adminSession && adminSession.value === ADMIN_TOKEN);
 
     if (!isCronAuthorized && !isAdminAuthorized) {
-      if (process.env.NODE_ENV === "production" || cronSecret) {
-        return NextResponse.json({ error: "Unauthorized cron invocation." }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Unauthorized cron invocation." }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

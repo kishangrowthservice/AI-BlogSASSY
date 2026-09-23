@@ -4,8 +4,16 @@ import { getDbClient } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-const SESSION_TOKEN = process.env.ADMIN_SESSION_TOKEN || "aiblog-admin-valid-session-2024";
+function requireEnv(key: string): string {
+  const val = process.env[key];
+  if (!val) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return val;
+}
+
+const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
+const SESSION_TOKEN = requireEnv("ADMIN_SESSION_TOKEN");
 const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 // Local fallback in-memory map

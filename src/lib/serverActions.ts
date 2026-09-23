@@ -7,13 +7,15 @@ import { createClient as createSupabaseServerClient } from "@/lib/supabase/serve
 import type { SiteProfile } from "./types";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
 
-const ADMIN_TOKEN = process.env.ADMIN_SESSION_TOKEN || "aiblog-admin-valid-session-2024";
-
 async function verifyAdminAuth(): Promise<boolean> {
+  const adminToken = process.env.ADMIN_SESSION_TOKEN;
+  if (!adminToken) {
+    throw new Error("Missing required environment variable: ADMIN_SESSION_TOKEN");
+  }
   try {
     const cookieStore = await cookies();
     const session = cookieStore.get("admin_session");
-    return Boolean(session && session.value === ADMIN_TOKEN);
+    return Boolean(session && session.value === adminToken);
   } catch {
     // Support non-HTTP script/test environments (e.g. tsx verify scripts)
     return process.env.NODE_ENV !== "production";
