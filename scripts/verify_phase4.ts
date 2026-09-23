@@ -1,109 +1,173 @@
+import assert from "assert";
 import fs from "fs";
 import path from "path";
-import {
-  generateRawApiKey,
-  getObservabilityStats,
-} from "../src/lib/adminActions";
-import { hashApiKey } from "../src/lib/db";
 
-// Load .env.local
-const envLocalPath = path.resolve(process.cwd(), ".env.local");
-if (fs.existsSync(envLocalPath)) {
-  const content = fs.readFileSync(envLocalPath, "utf-8");
+if (fs.existsSync(".env.local")) {
+  const content = fs.readFileSync(".env.local", "utf8");
   for (const line of content.split("\n")) {
     const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
-      const idx = trimmed.indexOf("=");
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const idx = trimmed.indexOf("=");
+    if (idx !== -1) {
       const key = trimmed.slice(0, idx).trim();
       const val = trimmed.slice(idx + 1).trim();
-      if (!process.env[key]) {
-        process.env[key] = val;
-      }
+      process.env[key] = val;
     }
   }
 }
 
+import { reserveTenantQuota, releaseTenantQuota, localSiteProfiles, getDbClient } from "../src/lib/db";
+import { toSafeSiteProfile, SafeSiteProfile } from "../src/lib/sanitize";
+import type { SiteProfile } from "../src/lib/types";
+
 async function runPhase4Verification() {
-  console.log("=================================================");
-  console.log("  PHASE 4 VERIFICATION: ADMIN DASHBOARD & ONBOARD");
-  console.log("=================================================\n");
-
-  let passed = 0;
-  let failed = 0;
-
-  function assert(condition: boolean, testName: string, detail?: string) {
-    if (condition) {
-      console.log(`[PASS] ${testName}`);
-      passed++;
-    } else {
-      console.error(`[FAIL] ${testName}${detail ? ` - ${detail}` : ""}`);
-      failed++;
-    }
-  }
+  console.log("=== PHASE 4 VERIFICATION SUITE ===");
 
   // -------------------------------------------------------------
-  // Test 1: API Key Generation & SHA-256 Hashing (§9)
+  // Test 1: Atomic Quota Reservation & Release (Local & DB Fallback)
   // -------------------------------------------------------------
-  console.log("--- 1. API Key Generation & Security Contract ---");
-  const rawKey1 = generateRawApiKey();
-  const rawKey2 = generateRawApiKey();
+  console.log("\n--- 1. Atomic Quota Reservation & Release ---");
 
-  assert(rawKey1.startsWith("gs_live_"), "Generated key has 'gs_live_' prefix");
-  assert(rawKey1.length === 48, "Generated key has standard 48-char length (gs_live_ + 40 hex)");
-  assert(rawKey1 !== rawKey2, "Each generated raw API key is cryptographically unique");
-
-  const hashedKey = hashApiKey(rawKey1);
-  assert(hashedKey.length === 64, "Key hash is 64 hex characters (SHA-256)");
-  assert(hashedKey !== rawKey1, "Raw key is completely unrecoverable from hash (one-way function)");
-
-  // -------------------------------------------------------------
-  // Test 2: Domain Sanitization & Onboarding Validation
-  // -------------------------------------------------------------
-  console.log("\n--- 2. Onboard Input Sanitization ---");
-  const rawDomain = "https://ClientSite.com/";
-  const sanitizedDomain = rawDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
-  assert(sanitizedDomain === "clientsite.com", "Domain correctly stripped of protocol and trailing slash");
-
-  // -------------------------------------------------------------
-  // Test 3: Observability Stats Aggregation Contract (§10)
-  // -------------------------------------------------------------
-  console.log("\n--- 3. Observability Stats Aggregation ---");
-  const stats = await getObservabilityStats();
-
-  assert(typeof stats.totalTenants === "number", "totalTenants is a valid number");
-  assert(typeof stats.totalGenerations === "number", "totalGenerations is a valid number");
-  assert(typeof stats.successRatePercent === "number" && stats.successRatePercent <= 100, "successRatePercent is valid percentage");
-  assert(typeof stats.avgLatencyMs === "number", "avgLatencyMs is a valid number");
-  assert(typeof stats.groqCount === "number", "groqCount tracked for provider split");
-  assert(typeof stats.geminiCount === "number", "geminiCount tracked for provider split");
-  assert(Array.isArray(stats.recentLogs), "recentLogs returned as array for stream table");
-
-  // -------------------------------------------------------------
-  // Test 4: Tenant Deactivation Contract (§9)
-  // -------------------------------------------------------------
-  console.log("\n--- 4. Deactivation Without Data Deletion ---");
-  const mockTenant = {
-    id: "tenant-mock-deactivate",
-    site_name: "Mock Client",
+  const testSiteId = crypto.randomUUID();
+  const testProfile: SiteProfile = {
+    id: testSiteId,
+    site_name: "Phase 4 Quota Test",
+    domain: "quota-test.com",
+    api_key_hash: "secret_hash_12345",
     is_active: true,
+    brand_knowledge: "Brand test",
+    tone: "Professional",
+    target_audience: "CTOs",
+    internal_links: [],
+    monthly_quota: 2,
+    used_quota: 0,
+    groq_model: "openai/gpt-oss-120b",
+    gemini_model: "gemini-2.5-flash-lite",
+    byo_groq_api_key: "gsk_super_secret_groq_key_9999",
+    byo_gemini_api_key: "gemini_super_secret_key_8888",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
-  const deactivatedTenant = { ...mockTenant, is_active: false };
-  assert(deactivatedTenant.is_active === false, "is_active flag set to false revokes access immediately");
-  assert(deactivatedTenant.id === mockTenant.id, "Historical records preserved without deletion");
 
-  // -------------------------------------------------------------
-  // Summary
-  // -------------------------------------------------------------
-  console.log("\n=================================================");
-  console.log(`  PHASE 4 RESULTS: ${passed} PASSED, ${failed} FAILED`);
-  console.log("=================================================");
+  // Seed into local profiles store
+  localSiteProfiles.set(testSiteId, { ...testProfile });
 
-  if (failed > 0) {
-    process.exit(1);
+  // Try creating in Supabase DB if accessible
+  try {
+    const supabase = getDbClient();
+    await supabase.from("site_profiles").insert([testProfile]);
+  } catch {
+    // Falls back gracefully to localSiteProfiles
   }
+
+  // 1a. First slot reservation
+  const res1 = await reserveTenantQuota(testSiteId);
+  console.log("Reservation 1 result:", res1);
+  assert(res1.reserved === true, "First quota reservation succeeds");
+  assert(res1.used_quota === 1, "used_quota incremented to 1");
+
+  // 1b. Second slot reservation (hits monthly limit)
+  const res2 = await reserveTenantQuota(testSiteId);
+  console.log("Reservation 2 result:", res2);
+  assert(res2.reserved === true, "Second quota reservation succeeds");
+  assert(res2.used_quota === 2, "used_quota incremented to 2 (monthly limit)");
+
+  // 1c. Third slot reservation must be REJECTED (quota full)
+  const res3 = await reserveTenantQuota(testSiteId);
+  console.log("Reservation 3 result (full):", res3);
+  assert(res3.reserved === false, "Third reservation must be rejected when full");
+  assert(res3.used_quota === 2, "used_quota does not exceed monthly limit (2)");
+
+  // 1d. Simulate concurrent burst: 5 concurrent reservations when quota is full
+  console.log("Testing concurrent burst protection...");
+  const burstResults = await Promise.all([
+    reserveTenantQuota(testSiteId),
+    reserveTenantQuota(testSiteId),
+    reserveTenantQuota(testSiteId),
+    reserveTenantQuota(testSiteId),
+    reserveTenantQuota(testSiteId),
+  ]);
+  const allowedInBurst = burstResults.filter((r) => r.reserved).length;
+  assert(allowedInBurst === 0, `All concurrent requests rejected when quota full (allowed: ${allowedInBurst})`);
+  const profileAfterBurst = localSiteProfiles.get(testSiteId);
+  if (profileAfterBurst) {
+    assert(profileAfterBurst.used_quota <= 2, "used_quota strictly protected from overshooting limit");
+  }
+
+  // 1e. Release one slot (e.g. Generation failed or aborted)
+  console.log("Releasing reservation after simulated generation failure...");
+  await releaseTenantQuota(testSiteId);
+  const profileAfterRelease = localSiteProfiles.get(testSiteId);
+  console.log("Profile used_quota after release:", profileAfterRelease?.used_quota);
+
+  // 1f. Reservation succeeds again now that 1 slot is freed
+  const res4 = await reserveTenantQuota(testSiteId);
+  console.log("Reservation after slot release:", res4);
+  assert(res4.reserved === true, "Reservation succeeds after slot was released");
+  assert(res4.used_quota === 2, "used_quota back at limit 2");
+
+  // Cleanup test profile
+  try {
+    const supabase = getDbClient();
+    await supabase.from("site_profiles").delete().eq("id", testSiteId);
+  } catch {}
+  localSiteProfiles.delete(testSiteId);
+  console.log("PASS: Atomic Quota Reservation & Release verified!");
+
+  // -------------------------------------------------------------
+  // Test 2: BYO Key Exposure Audit & Sanitization
+  // -------------------------------------------------------------
+  console.log("\n--- 2. BYO Key Exposure Audit & Sanitization ---");
+
+  const fullProfile: SiteProfile = {
+    id: "test-site-uuid-secret",
+    site_name: "Audit Test Brand",
+    domain: "audit.test.com",
+    api_key_hash: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+    key_prefix: "gs_live_••••3b4f",
+    is_active: true,
+    brand_knowledge: "Brand secret knowledge",
+    tone: "Direct",
+    target_audience: "Engineers",
+    internal_links: [{ url: "/demo", label: "Demo" }],
+    monthly_quota: 50,
+    used_quota: 10,
+    groq_model: "openai/gpt-oss-120b",
+    gemini_model: "gemini-2.5-flash-lite",
+    byo_groq_api_key: "gsk_live_very_secret_groq_api_token_12345",
+    byo_gemini_api_key: "AIzaSy_very_secret_gemini_api_token_67890",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const safeProfile = toSafeSiteProfile(fullProfile);
+
+  // Assert keys are completely removed
+  assert((safeProfile as any).byo_groq_api_key === undefined, "byo_groq_api_key stripped from SafeSiteProfile");
+  assert((safeProfile as any).byo_gemini_api_key === undefined, "byo_gemini_api_key stripped from SafeSiteProfile");
+  assert((safeProfile as any).api_key_hash === undefined, "api_key_hash stripped from SafeSiteProfile");
+
+  // Assert non-sensitive fields preserved
+  assert(safeProfile.id === fullProfile.id, "Profile ID preserved");
+  assert(safeProfile.site_name === fullProfile.site_name, "Site name preserved");
+  assert(safeProfile.domain === fullProfile.domain, "Domain preserved");
+  assert(safeProfile.monthly_quota === fullProfile.monthly_quota, "Quota limits preserved");
+  assert(safeProfile.key_prefix === "gs_live_••••3b4f", "Safe masked prefix preserved");
+
+  // Verify JSON serialization doesn't leak secrets
+  const jsonOutput = JSON.stringify(safeProfile);
+  assert(!jsonOutput.includes("gsk_live_very_secret"), "Serialized JSON does not contain Groq secret");
+  assert(!jsonOutput.includes("AIzaSy_very_secret"), "Serialized JSON does not contain Gemini secret");
+  assert(!jsonOutput.includes("5e884898da280471"), "Serialized JSON does not contain api_key_hash");
+
+  console.log("PASS: BYO key exposure audit & sanitization verified!");
+
+  console.log("\n==============================================");
+  console.log("ALL PHASE 4 TESTS PASSED SUCCESSFULLY!");
+  console.log("==============================================");
 }
 
 runPhase4Verification().catch((err) => {
-  console.error("Phase 4 verification crashed:", err);
+  console.error("PHASE 4 TEST FAILURE:", err);
   process.exit(1);
 });

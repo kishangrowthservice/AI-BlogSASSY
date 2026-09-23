@@ -64,7 +64,7 @@ async function runAuthFlowVerification() {
   console.log("\n--- 2. Verify Zero Auto-Key Generation ---");
   const dashDataBefore = await getTenantDashboardData(siteId);
   assert(dashDataBefore.success === true, "Dashboard data retrieved successfully");
-  assert(dashDataBefore.profile?.api_key_hash === undefined, "API key hash is stripped from client profile for security");
+  assert((dashDataBefore.profile as any)?.api_key_hash === undefined, "API key hash is stripped from client profile for security");
   assert(dashDataBefore.keyPrefix === null, "Key prefix is NULL before user clicks generate");
 
   // Test 3: Generate Key On Demand

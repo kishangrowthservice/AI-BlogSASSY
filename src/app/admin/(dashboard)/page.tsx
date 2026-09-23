@@ -1,4 +1,5 @@
 import { listSiteProfiles, getObservabilityStats } from "@/lib/adminActions";
+import { toSafeSiteProfile } from "@/lib/sanitize";
 import { AdminDashboardClient } from "./AdminDashboardClient";
 
 export const revalidate = 0; // Dynamic real-time telemetry
@@ -21,7 +22,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       <AdminDashboardClient
-        initialProfiles={profiles}
+        initialProfiles={profiles.map(toSafeSiteProfile)}
         stats={stats}
       />
     </div>

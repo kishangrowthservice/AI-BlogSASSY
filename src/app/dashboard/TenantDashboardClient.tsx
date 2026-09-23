@@ -23,7 +23,7 @@ import {
   updateTenantByoKeys,
   updateTenantBrandAction,
 } from "@/lib/serverActions";
-import type { SiteProfile } from "@/lib/types";
+import type { SafeSiteProfile } from "@/lib/sanitize";
 import {
   Key,
   Sparkles,
@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 
 interface TenantDashboardProps {
-  initialProfile: SiteProfile;
+  initialProfile: SafeSiteProfile;
   initialKeyPrefix: string | null;
   initialLogs: any[];
   currentUserEmail?: string | null;
@@ -61,7 +61,7 @@ export function TenantDashboardClient({
   initialLogs,
   currentUserEmail,
 }: TenantDashboardProps) {
-  const [profile, setProfile] = useState<SiteProfile>(initialProfile);
+  const [profile, setProfile] = useState<SafeSiteProfile>(initialProfile);
   const [keyPrefix, setKeyPrefix] = useState<string | null>(initialKeyPrefix);
   const [logs, setLogs] = useState<any[]>(initialLogs);
 
@@ -71,9 +71,9 @@ export function TenantDashboardClient({
   const [revealedRawKey, setRevealedRawKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  // BYO Key State
-  const [byoGroq, setByoGroq] = useState(initialProfile.byo_groq_api_key || "");
-  const [byoGemini, setByoGemini] = useState(initialProfile.byo_gemini_api_key || "");
+  // BYO Key State (never pre-filled with plaintext credentials from server)
+  const [byoGroq, setByoGroq] = useState("");
+  const [byoGemini, setByoGemini] = useState("");
   const [isSavingByo, setIsSavingByo] = useState(false);
   const [byoSuccess, setByoSuccess] = useState(false);
 

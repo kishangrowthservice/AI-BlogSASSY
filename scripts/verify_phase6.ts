@@ -94,8 +94,8 @@ async function runPhase6Verification() {
 
   assert(onboardRes.success, "onboardTenantAction succeeds with BYO-key input");
   if (onboardRes.profile) {
-    assert(onboardRes.profile.byo_groq_api_key === "gsk_tenant_onboard_key", "Profile persisted BYO Groq key");
-    assert(onboardRes.profile.byo_gemini_api_key === "gemini_tenant_onboard_key", "Profile persisted BYO Gemini key");
+    assert((onboardRes.profile as any).byo_groq_api_key === undefined, "Client-bound profile sanitizes BYO Groq key");
+    assert((onboardRes.profile as any).byo_gemini_api_key === undefined, "Client-bound profile sanitizes BYO Gemini key");
   }
 
   const updateResult = await updateTenantByoKeys("tenant-uuid-101", "gsk_updated_key", null);

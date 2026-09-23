@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSiteProfileByApiKey, incrementUsedQuota, recordGenerationLog } from "@/lib/db";
+import { getSiteProfileByApiKey, reserveTenantQuota, releaseTenantQuota, recordGenerationLog } from "@/lib/db";
 import { generateBlogPostResilient } from "@/lib/blogEngineFallback";
 import { checkTenantRateLimit } from "@/lib/rateLimiter";
 import { enqueueGenerationJob } from "@/lib/queueService";
@@ -22,6 +22,7 @@ export async function OPTIONS() {
 export async function POST(request: Request) {
   const requestStart = Date.now();
   let siteProfile: SiteProfile | null = null;
+  let quotaReserved = false;
 
   try {
     // 1. Authenticate via x-api-key header
@@ -41,11 +42,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Check tenant monthly quota
-    if (siteProfile.used_quota >= siteProfile.monthly_quota) {
+    // 2. Atomically reserve tenant monthly quota slot (PHASE4.md Task 1)
+    const reservation = await reserveTenantQuota(siteProfile.id);
+    quotaReserved = reservation.reserved;
+    if (!reservation.reserved) {
       return NextResponse.json(
         {
-          error: `Monthly generation quota exceeded (${siteProfile.used_quota}/${siteProfile.monthly_quota}). Please upgrade your plan or wait for the monthly reset.`,
+          error: `Monthly generation quota exceeded (${reservation.used_quota}/${reservation.monthly_quota}). Please upgrade your plan or wait for the monthly reset.`,
         },
         { status: 429 }
       );
@@ -55,6 +58,7 @@ export async function POST(request: Request) {
     // 5 requests per minute per tenant default
     const rateLimit = await checkTenantRateLimit(siteProfile.id, 5);
     if (!rateLimit.allowed) {
+      if (quotaReserved) await releaseTenantQuota(siteProfile.id).catch(() => {});
       return NextResponse.json(
         {
           error: `Per-minute rate limit exceeded (${rateLimit.current}/${rateLimit.limit} RPM). Burst protection engaged to prevent noisy-neighbor starvation.`,
@@ -72,6 +76,7 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
+      if (quotaReserved) await releaseTenantQuota(siteProfile.id).catch(() => {});
       return NextResponse.json(
         { error: "Invalid JSON request body." },
         { status: 400 }
@@ -81,6 +86,7 @@ export async function POST(request: Request) {
     const { topic, keywords, wordCount, tone, audience, model } = body || {};
 
     if (!topic || typeof topic !== "string" || !topic.trim()) {
+      if (quotaReserved) await releaseTenantQuota(siteProfile.id).catch(() => {});
       return NextResponse.json(
         { error: "Field 'topic' is required and must be a non-empty string." },
         { status: 400 }
@@ -143,13 +149,12 @@ export async function POST(request: Request) {
       fallback_triggered: telemetry.fallback_triggered,
     });
 
-    // 7. Increment used_quota atomically in background
-    await incrementUsedQuota(siteProfile.id).catch((err) => {
-      console.error("[generate-blog] Failed to increment used_quota:", err);
-    });
-
     return NextResponse.json(post, { status: 200, headers: corsHeaders });
   } catch (err: unknown) {
+    if (quotaReserved) {
+      await releaseTenantQuota(siteProfile!.id).catch(() => {});
+    }
+
     const elapsed = Date.now() - requestStart;
     const message = err instanceof Error ? err.message : "Internal generation failure";
     console.error("[generate-blog] Execution error:", err);

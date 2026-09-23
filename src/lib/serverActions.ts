@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { getDbClient, hashApiKey, localSiteProfiles } from "./db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SiteProfile } from "./types";
+import { toSafeSiteProfile, type SafeSiteProfile } from "./sanitize";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
 
 async function verifyAdminAuth(): Promise<boolean> {
@@ -99,7 +100,7 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
 
     return {
       success: true,
-      profile,
+      profile: toSafeSiteProfile(profile),
       rawApiKey,
     };
   } catch (err: unknown) {
@@ -203,7 +204,7 @@ export interface GenerateApiKeyResult {
 
 export interface TenantDashboardData {
   success: boolean;
-  profile?: SiteProfile;
+  profile?: SafeSiteProfile;
   keyPrefix?: string | null;
   recentLogs?: any[];
   error?: string;
@@ -398,16 +399,15 @@ export async function getTenantDashboardData(siteId: string): Promise<TenantDash
     // Resolve key prefix: stored prefix OR fallback masked indicator if api_key_hash exists
     const resolvedPrefix = profile.key_prefix || (profile.api_key_hash ? "gs_live_••••active" : null);
 
-    // Sanitize: Never expose api_key_hash to client
-    const sanitizedProfile: SiteProfile = {
+    // Sanitize: Never expose api_key_hash or BYO keys to client
+    const safeProfile = toSafeSiteProfile({
       ...profile,
-      api_key_hash: undefined,
       key_prefix: resolvedPrefix,
-    };
+    });
 
     return {
       success: true,
-      profile: sanitizedProfile,
+      profile: safeProfile,
       keyPrefix: resolvedPrefix,
       recentLogs,
     };

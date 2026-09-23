@@ -69,7 +69,7 @@ async function runSelfServeVerification() {
   assert(dashDataBeforeKey.profile?.site_name === testSiteName, "Profile site_name matches input");
   assert(dashDataBeforeKey.profile?.domain === "vortexcloud.io", "Domain stripped of protocol and trailing paths");
   assert(dashDataBeforeKey.keyPrefix === null || dashDataBeforeKey.keyPrefix === undefined, "Zero API key generated on onboarding (keyPrefix is null)");
-  assert(dashDataBeforeKey.profile?.api_key_hash === undefined, "Hash is sanitized and never exposed to client");
+  assert((dashDataBeforeKey.profile as any)?.api_key_hash === undefined, "Hash is sanitized and never exposed to client");
 
   // -------------------------------------------------------------
   // Test 2: On-Demand API Key Generation
@@ -90,7 +90,7 @@ async function runSelfServeVerification() {
   const dashDataAfterKey = await getTenantDashboardData(siteId);
   assert(dashDataAfterKey.success === true, "Dashboard reloads successfully");
   assert(dashDataAfterKey.keyPrefix === keyGenRes.keyPrefix, "Dashboard displays active masked keyPrefix");
-  assert(dashDataAfterKey.profile?.api_key_hash === undefined, "Raw key and hash remain secret from dashboard payload");
+  assert((dashDataAfterKey.profile as any)?.api_key_hash === undefined, "Raw key and hash remain secret from dashboard payload");
 
   // -------------------------------------------------------------
   // Test 4: Key Regeneration (On-Demand Rotation)

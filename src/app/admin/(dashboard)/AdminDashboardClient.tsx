@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import type { SiteProfile, GenerationLog } from "@/lib/types";
+import type { GenerationLog } from "@/lib/types";
+import type { SafeSiteProfile } from "@/lib/sanitize";
 import type { ObservabilityStats } from "@/lib/adminActions";
 import { onboardTenantAction, toggleTenantStatus } from "@/lib/serverActions";
 
@@ -72,12 +73,12 @@ import {
 } from "lucide-react";
 
 interface Props {
-  initialProfiles: SiteProfile[];
+  initialProfiles: SafeSiteProfile[];
   stats: ObservabilityStats;
 }
 
 export function AdminDashboardClient({ initialProfiles, stats }: Props) {
-  const [profiles, setProfiles] = useState<SiteProfile[]>(initialProfiles);
+  const [profiles, setProfiles] = useState<SafeSiteProfile[]>(initialProfiles);
   const [activeTab, setActiveTab] = useState<string>("tenants");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -194,7 +195,7 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
     }
   };
 
-  const handleToggleActive = async (profile: SiteProfile) => {
+  const handleToggleActive = async (profile: SafeSiteProfile) => {
     const updatedStatus = !profile.is_active;
     const ok = await toggleTenantStatus(profile.id, updatedStatus);
     if (ok) {
@@ -505,16 +506,9 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
 
                         {/* BYO-Key Badge */}
                         <TableCell>
-                          {profile.byo_groq_api_key || profile.byo_gemini_api_key ? (
-                            <Badge variant="byo" className="text-[10px] py-0.5 px-2 gap-1 font-medium">
-                              <Key className="h-2.5 w-2.5" />
-                              BYO Key Active
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] text-muted-foreground py-0.5 px-2">
-                              Platform Pool
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="text-[10px] text-muted-foreground py-0.5 px-2">
+                            Platform Pool
+                          </Badge>
                         </TableCell>
 
                         {/* Status */}
@@ -549,11 +543,11 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                                 Copy Tenant ID
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => copyToClipboard(profile.api_key_hash || "No key generated")}
+                                onClick={() => copyToClipboard(profile.key_prefix || "No key generated")}
                                 className="gap-2 cursor-pointer"
                               >
                                 <Key className="h-3.5 w-3.5" />
-                                Copy Key Hash
+                                Copy Key Prefix
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem

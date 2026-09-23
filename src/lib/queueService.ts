@@ -1,4 +1,4 @@
-import { getDbClient, incrementUsedQuota, recordGenerationLog } from "./db";
+import { getDbClient, releaseTenantQuota, recordGenerationLog } from "./db";
 import { generateBlogPostResilient } from "./blogEngineFallback";
 import type { QueueJob, GenerateBlogParams, SiteProfile } from "./types";
 
@@ -159,9 +159,6 @@ export async function processNextQueueJobs(
         // Fallback already updated in localQueue
       }
 
-      await incrementUsedQuota(job.site_id).catch((err) =>
-        console.error("[queueService] Failed to increment used_quota:", err)
-      );
       await recordGenerationLog({
         site_id: job.site_id,
         provider_used: telemetry.provider_used,
@@ -208,6 +205,7 @@ export async function processNextQueueJobs(
       }
 
       if (job.status === "failed") {
+        await releaseTenantQuota(job.site_id).catch(() => {});
         await recordGenerationLog({
           site_id: job.site_id,
           provider_used: "none",

@@ -137,4 +137,58 @@ export async function recordGenerationLog(log: import("./types").GenerationLog):
   }
 }
 
+/**
+ * Atomically reserve tenant quota slot before generation (PHASE4.md Task 1).
+ * Closes the quota race condition under concurrent bursts.
+ */
+export async function reserveTenantQuota(
+  siteId: string
+): Promise<{ reserved: boolean; used_quota: number; monthly_quota: number }> {
+  try {
+    const supabase = getDbClient();
+    const { data, error } = await supabase.rpc("reserve_tenant_quota", { p_site_id: siteId });
+    if (!error && data && Array.isArray(data) && data.length > 0) {
+      const local = localSiteProfiles.get(siteId);
+      if (local && data[0].reserved) {
+        local.used_quota = data[0].used_quota;
+      }
+      return data[0];
+    }
+    if (error) {
+      throw error;
+    }
+  } catch (err) {
+    // Fallback for local testing / offline DB
+    const local = localSiteProfiles.get(siteId);
+    if (local) {
+      if (local.used_quota < local.monthly_quota) {
+        local.used_quota += 1;
+        return { reserved: true, used_quota: local.used_quota, monthly_quota: local.monthly_quota };
+      }
+      return { reserved: false, used_quota: local.used_quota, monthly_quota: local.monthly_quota };
+    }
+    throw new Error("Failed to reserve tenant quota: " + (err instanceof Error ? err.message : "no data returned"));
+  }
+
+  throw new Error("Failed to reserve tenant quota: no data returned");
+}
+
+/**
+ * Atomically release a reserved quota slot if generation fails (PHASE4.md Task 1).
+ */
+export async function releaseTenantQuota(siteId: string): Promise<void> {
+  try {
+    const supabase = getDbClient();
+    await supabase.rpc("release_tenant_quota", { p_site_id: siteId });
+  } catch (err) {
+    console.error("[db] Failed to release tenant quota:", err);
+  }
+
+  const local = localSiteProfiles.get(siteId);
+  if (local) {
+    local.used_quota = Math.max((local.used_quota || 0) - 1, 0);
+  }
+}
+
+
 

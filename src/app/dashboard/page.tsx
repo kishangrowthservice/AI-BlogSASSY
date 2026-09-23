@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTenantDashboardData, getUserPrimarySiteId } from "@/lib/serverActions";
+import { toSafeSiteProfile } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/server";
 import { TenantDashboardClient } from "./TenantDashboardClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -123,7 +124,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <TenantDashboardClient
-      initialProfile={result.profile}
+      initialProfile={toSafeSiteProfile(result.profile)}
       initialKeyPrefix={result.keyPrefix || null}
       initialLogs={result.recentLogs || []}
       currentUserEmail={currentUserEmail}

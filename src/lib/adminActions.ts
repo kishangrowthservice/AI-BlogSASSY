@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { getDbClient, hashApiKey, localSiteProfiles } from "./db";
 import type { SiteProfile, GenerationLog } from "./types";
+import type { SafeSiteProfile } from "./sanitize";
 
 export interface OnboardTenantInput {
   site_name: string;
@@ -18,7 +19,7 @@ export interface OnboardTenantInput {
 
 export interface OnboardTenantResult {
   success: boolean;
-  profile?: SiteProfile;
+  profile?: SafeSiteProfile;
   rawApiKey?: string;
   error?: string;
 }
