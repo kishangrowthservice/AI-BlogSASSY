@@ -2,6 +2,7 @@ import React from "react";
 import type { GeneratedBlogPost } from "@/lib/types";
 import { defaultBrandConfig, type BrandConfig } from "@/theme/brand.config";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Clock, Calendar, User, ArrowRight } from "lucide-react";
 import "@/theme/theme.css";
 
@@ -101,13 +102,12 @@ export function BlogPostViewer({
         <section className="blog-post-cta rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 mt-8">
           <h4 className="text-lg font-bold text-foreground mb-1">{brand.cta.title}</h4>
           <p className="text-sm text-muted-foreground mb-4">{brand.cta.description}</p>
-          <a
-            href={brand.cta.buttonUrl}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-          >
-            {brand.cta.buttonText}
-            <ArrowRight className="h-4 w-4" />
-          </a>
+          <Button asChild size="sm" className="gap-2 shadow-xs">
+            <a href={brand.cta.buttonUrl}>
+              {brand.cta.buttonText}
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </Button>
         </section>
       )}
     </article>

@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { createClient } from "@/lib/supabase/client";
 import {
   Sparkles,
   Zap,
@@ -46,8 +48,30 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
+  const [userEmail, setUserEmail] = useState<string | null>(currentUserEmail || null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [copiedSnippet, setCopiedSnippet] = useState(false);
+
+  React.useEffect(() => {
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+          setUserEmail(user.email);
+        }
+      }).catch(() => {});
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUserEmail(session?.user?.email || null);
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch {
+      // Browser fallback
+    }
+  }, []);
 
   const integrationSnippet = `// 1-Click Publishing to Your Website
 const article = await blogEngine.publish({
@@ -136,10 +160,10 @@ console.log("Published:", article.title, article.url);`;
               </Link>
             </Button>
 
-            {currentUserEmail ? (
+            {userEmail ? (
               <div className="flex items-center gap-2">
                 <span className="hidden md:inline-flex text-xs text-muted-foreground font-medium border border-border/40 px-2.5 py-1 rounded-full bg-muted/20">
-                  {currentUserEmail}
+                  {userEmail}
                 </span>
 
                 <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
@@ -222,8 +246,8 @@ console.log("Published:", article.title, article.url);`;
           className="flex flex-wrap items-center justify-center gap-4 mb-16"
         >
           <Button asChild size="lg" className="h-12 px-7 text-sm font-semibold shadow-lg shadow-primary/10 gap-2 group">
-            <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
-              {currentUserEmail ? "Go to Your Dashboard" : "Start Free Trial"}
+            <Link href={userEmail ? "/dashboard" : "/signup"}>
+              {userEmail ? "Go to Your Dashboard" : "Start Free Trial"}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
@@ -669,18 +693,12 @@ console.log("Published:", article.title, article.url);`;
             <span className={`text-xs font-medium ${billingCycle === "monthly" ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
               Monthly
             </span>
-            <button
-              type="button"
-              onClick={() => setBillingCycle(billingCycle === "monthly" ? "annual" : "monthly")}
-              className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-secondary transition-colors duration-200 ease-in-out focus:outline-hidden"
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-primary shadow-lg ring-0 transition duration-200 ease-in-out ${
-                  billingCycle === "annual" ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-            <span className={`text-xs font-medium flex items-center gap-1 ${billingCycle === "annual" ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
+            <Switch
+              checked={billingCycle === "annual"}
+              onCheckedChange={(checked) => setBillingCycle(checked ? "annual" : "monthly")}
+              aria-label="Toggle billing cycle"
+            />
+            <span className={`text-xs font-medium flex items-center gap-1.5 ${billingCycle === "annual" ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
               Annual
               <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 px-1.5 py-0">
                 SAVE 20%
@@ -726,8 +744,8 @@ console.log("Published:", article.title, article.url);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
-                  {currentUserEmail ? "Go to Dashboard" : "Start Free Trial"}
+                <Link href={userEmail ? "/dashboard" : "/signup"}>
+                  {userEmail ? "Go to Dashboard" : "Start Free Trial"}
                 </Link>
               </Button>
             </CardFooter>
@@ -775,8 +793,8 @@ console.log("Published:", article.title, article.url);`;
               </CardContent>
               <CardFooter>
                 <Button asChild className="w-full text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
-                  <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
-                    {currentUserEmail ? "Go to Dashboard" : "Start 14-Day Free Trial"}
+                  <Link href={userEmail ? "/dashboard" : "/signup"}>
+                    {userEmail ? "Go to Dashboard" : "Start 14-Day Free Trial"}
                   </Link>
                 </Button>
               </CardFooter>
@@ -819,8 +837,8 @@ console.log("Published:", article.title, article.url);`;
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full text-xs">
-                <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
-                  {currentUserEmail ? "Go to Dashboard" : "Get Started"}
+                <Link href={userEmail ? "/dashboard" : "/signup"}>
+                  {userEmail ? "Go to Dashboard" : "Get Started"}
                 </Link>
               </Button>
             </CardFooter>
@@ -842,8 +860,8 @@ console.log("Published:", article.title, article.url);`;
 
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="h-12 px-8 font-semibold shadow-lg shadow-primary/20">
-              <Link href={currentUserEmail ? "/dashboard" : "/signup"}>
-                {currentUserEmail ? "Go to Client Dashboard" : "Start Your Free Trial"}
+              <Link href={userEmail ? "/dashboard" : "/signup"}>
+                {userEmail ? "Go to Client Dashboard" : "Start Your Free Trial"}
                 <ArrowRight className="h-4 w-4 ml-1.5" />
               </Link>
             </Button>
@@ -866,7 +884,7 @@ console.log("Published:", article.title, article.url);`;
           </div>
 
           <div className="flex items-center gap-6">
-            {currentUserEmail ? (
+            {userEmail ? (
               <>
                 <Link href="/dashboard" className="hover:text-foreground transition-colors font-medium">
                   Client Dashboard

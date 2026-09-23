@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { LandingPage } from "@/components/landing/LandingPage";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   let userEmail: string | null = null;
 
