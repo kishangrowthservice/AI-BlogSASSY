@@ -215,17 +215,22 @@ export async function generateBlogPostResilient(
 
     const status = (err as { status?: number })?.status;
     const message = (err as { message?: string })?.message || "";
-    const isFallbackEligible =
-      status === 429 ||
-      status === 401 ||
-      status === 500 ||
-      status === 503 ||
-      err instanceof SyntaxError ||
-      /rate[ -]?limit|quota|unauthorized|invalid api key|bad request|not configured|JSON|token|content/i.test(message);
 
-    if (isFallbackEligible) {
+    if (status === 401) {
+      // A bad/revoked key won't be fixed by switching providers for one
+      // request — it'll fail on every subsequent call too. Fail loudly
+      // instead of silently routing all future traffic to Gemini forever.
+      console.error(
+        `[ALERT: GROQ_AUTH_FAILURE] Groq API key rejected (401) for tenant "${siteProfile.site_name}". Needs manual fixing, not a fallback. Message: ${message}`
+      );
+      throw err;
+    }
+
+    const isTransientProviderIssue = status === 429 || status === 500 || status === 503;
+
+    if (isTransientProviderIssue) {
       console.warn(
-        `[LLM Orchestrator] Groq unavailable (${message || status}). Switching immediately to Gemini fallback (${geminiModel})...`
+        `[LLM Orchestrator] Groq transient failure (${status}). Switching immediately to Gemini fallback (${geminiModel})...`
       );
 
       try {
@@ -233,12 +238,12 @@ export async function generateBlogPostResilient(
       } catch (geminiErr: unknown) {
         const geminiMsg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
         throw new Error(
-          `Both LLM providers failed. Primary Groq unavailable. Fallback Gemini error: ${geminiMsg}`
+          `Both LLM providers failed. Primary Groq unavailable (${status}). Fallback Gemini error: ${geminiMsg}`
         );
       }
     }
 
-    // Non-recoverable error
+    // Non-recoverable / unexpected error — surface it directly, don't guess.
     throw err;
   }
 }

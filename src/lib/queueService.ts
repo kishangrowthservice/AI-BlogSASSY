@@ -1,4 +1,4 @@
-import { getDbClient } from "./db";
+import { getDbClient, incrementUsedQuota, recordGenerationLog } from "./db";
 import { generateBlogPostResilient } from "./blogEngineFallback";
 import type { QueueJob, GenerateBlogParams, SiteProfile } from "./types";
 
@@ -137,7 +137,7 @@ export async function processNextQueueJobs(
       }
 
       const siteProfile = profile as SiteProfile;
-      const { post } = await generateBlogPostResilient(siteProfile, job.payload);
+      const { post, telemetry } = await generateBlogPostResilient(siteProfile, job.payload);
 
       job.status = "completed";
       job.result = post;
@@ -158,6 +158,22 @@ export async function processNextQueueJobs(
       } catch {
         // Fallback already updated in localQueue
       }
+
+      await incrementUsedQuota(job.site_id).catch((err) =>
+        console.error("[queueService] Failed to increment used_quota:", err)
+      );
+      await recordGenerationLog({
+        site_id: job.site_id,
+        provider_used: telemetry.provider_used,
+        model: telemetry.model,
+        prompt_tokens: telemetry.prompt_tokens,
+        completion_tokens: telemetry.completion_tokens,
+        total_tokens: telemetry.total_tokens,
+        latency_ms: telemetry.latency_ms,
+        finish_reason: telemetry.finish_reason,
+        status: "success",
+        fallback_triggered: telemetry.fallback_triggered,
+      });
 
       successful++;
     } catch (err: unknown) {
@@ -189,6 +205,18 @@ export async function processNextQueueJobs(
           .eq("id", job.id);
       } catch {
         // Fallback in localQueue
+      }
+
+      if (job.status === "failed") {
+        await recordGenerationLog({
+          site_id: job.site_id,
+          provider_used: "none",
+          model: job.payload.model || "unknown",
+          latency_ms: 0,
+          status: "failed",
+          error_message: msg,
+          fallback_triggered: false,
+        }).catch(() => {});
       }
 
       failed++;
