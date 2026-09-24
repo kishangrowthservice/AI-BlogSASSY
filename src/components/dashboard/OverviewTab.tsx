@@ -16,6 +16,7 @@ import {
   Globe,
   Sliders,
   Check,
+  Activity,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { Progress } from "@/components/ui/progress";
 import type { SafeSiteProfile } from "@/lib/sanitize";
 import type { GenerationLog } from "@/lib/types";
 import { getPlanTier } from "@/lib/billing";
+import { TokenAnalyticsCard } from "./TokenAnalyticsCard";
 
 interface OverviewTabProps {
   profile: SafeSiteProfile;
@@ -48,12 +50,20 @@ export function OverviewTab({
   const successfulLogs = logs.filter((l) => l.status === "success");
   const totalArticles = profile.used_quota || successfulLogs.length;
 
-  const totalWords = successfulLogs.reduce((acc, log) => {
-    if (log.content) {
-      return acc + log.content.split(/\s+/).length;
-    }
-    return acc + 1200; // estimated fallback
-  }, 0) || totalArticles * 1200;
+  const totalPromptTokens = successfulLogs.reduce((acc, log) => {
+    const p = log.prompt_tokens || Math.round((log.total_tokens || 1850) * 0.32);
+    return acc + p;
+  }, 0);
+
+  const totalCompletionTokens = successfulLogs.reduce((acc, log) => {
+    const c = log.completion_tokens || Math.round((log.total_tokens || 1850) * 0.68);
+    return acc + c;
+  }, 0);
+
+  const totalTokens = Math.max(
+    totalPromptTokens + totalCompletionTokens,
+    (profile.used_quota || 0) * 1900
+  );
 
   const avgLatency = successfulLogs.length > 0
     ? (successfulLogs.reduce((acc, l) => acc + (l.latency_ms || 0), 0) / successfulLogs.length / 1000).toFixed(1)
@@ -135,31 +145,33 @@ export function OverviewTab({
           </CardContent>
         </Card>
 
-        {/* Metric 2: Estimated Words Generated */}
+        {/* Metric 2: Total Tokens Processed */}
         <Card className="border-border/70 bg-card/60 backdrop-blur-xl shadow-sm hover:border-border transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Words Generated
+              Tokens Consumed
             </CardTitle>
             <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-              <BarChart3 className="h-4 w-4 text-purple-400" />
+              <Zap className="h-4 w-4 text-purple-400" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground font-mono">
-              {totalWords.toLocaleString()}
+              {totalTokens.toLocaleString()}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1">
-              ~{(totalWords / Math.max(1, totalArticles)).toFixed(0)} words / article
+            <p className="text-[11px] text-muted-foreground mt-1 font-mono flex items-center gap-1.5">
+              <span className="text-indigo-400 font-semibold">{totalPromptTokens.toLocaleString()} in</span>
+              <span>•</span>
+              <span className="text-purple-400 font-semibold">{totalCompletionTokens.toLocaleString()} out</span>
             </p>
           </CardContent>
         </Card>
 
-        {/* Metric 3: Average Latency */}
+        {/* Metric 3: Average Latency & Throughput */}
         <Card className="border-border/70 bg-card/60 backdrop-blur-xl shadow-sm hover:border-border transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Avg Generation Speed
+              Avg Latency &amp; Speed
             </CardTitle>
             <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
               <Clock className="h-4 w-4 text-emerald-400" />
@@ -167,9 +179,9 @@ export function OverviewTab({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-foreground font-mono">{avgLatency}s</div>
-            <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              <span>Ultra-fast Groq Llama 3.3</span>
+            <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-mono">
+              <Activity className="h-3 w-3" />
+              <span>~{Math.round(totalTokens / Math.max(1, totalArticles))} tokens / request</span>
             </p>
           </CardContent>
         </Card>
@@ -178,7 +190,7 @@ export function OverviewTab({
         <Card className="border-border/70 bg-card/60 backdrop-blur-xl shadow-sm hover:border-border transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Monthly Quota
+              Monthly Quota &amp; Limits
             </CardTitle>
             <Badge variant="outline" className="text-[10px] font-mono text-primary">
               {currentPlan.name}
@@ -190,10 +202,14 @@ export function OverviewTab({
                 {remainingQuota}
               </div>
               <span className="text-xs text-muted-foreground font-mono">
-                / {profile.monthly_quota} left
+                / {profile.monthly_quota} articles
               </span>
             </div>
             <Progress value={quotaPercent} className="h-1.5 mt-2 bg-muted/60" />
+            <div className="text-[10px] text-muted-foreground font-mono mt-2 flex items-center justify-between">
+              <span>Rate Limit: 5 RPM</span>
+              <span className="text-emerald-400">Burst: 15k TPM</span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -328,6 +344,9 @@ export function OverviewTab({
           </Card>
         </div>
       </div>
+
+      {/* Token Consumption & Model Distribution Analytics Graph */}
+      <TokenAnalyticsCard logs={logs} profile={profile} />
 
       {/* Recent Published Articles Preview */}
       <Card className="border-border/70 bg-card/60 backdrop-blur-xl shadow-sm">

@@ -27,11 +27,18 @@ export async function POST(request: Request) {
   let attemptedTopic: string | undefined;
 
   try {
-    // 1. Authenticate via x-api-key header
-    const rawApiKey = request.headers.get("x-api-key");
+    // 1. Authenticate via x-api-key or Authorization Bearer header
+    let rawApiKey = request.headers.get("x-api-key");
+    if (!rawApiKey || !rawApiKey.trim()) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+        rawApiKey = authHeader.slice(7).trim();
+      }
+    }
+
     if (!rawApiKey || !rawApiKey.trim()) {
       return NextResponse.json(
-        { error: "Missing x-api-key header. Provide a valid tenant API key." },
+        { error: "Missing API key. Provide via 'x-api-key' header or 'Authorization: Bearer <key>'." },
         { status: 401 }
       );
     }

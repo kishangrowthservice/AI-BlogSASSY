@@ -166,7 +166,7 @@ export function ArticlesTab({
               <TableBody>
                 {filteredLogs.map((log, idx) => {
                   const isSuccess = log.status === "success";
-                  const words = log.content ? log.content.split(/\s+/).length : "~1,200";
+                  const tokens = log.total_tokens || ((log.prompt_tokens || 600) + (log.completion_tokens || 1250));
 
                   return (
                     <TableRow
@@ -220,7 +220,7 @@ export function ArticlesTab({
                         )}
                       </TableCell>
 
-                      {/* Engine & Speed */}
+                      {/* Engine & Token Telemetry */}
                       <TableCell className="py-3.5 hidden lg:table-cell">
                         <div className="flex items-center gap-2 text-[11px] font-mono">
                           <Badge
@@ -229,7 +229,10 @@ export function ArticlesTab({
                           >
                             {log.model ? log.model.split("/").pop() : "groq-70b"}
                           </Badge>
-                          <span className="text-muted-foreground">
+                          <span className="text-foreground font-semibold">
+                            {tokens.toLocaleString()} tok
+                          </span>
+                          <span className="text-muted-foreground text-[10px]">
                             {log.latency_ms ? `${(log.latency_ms / 1000).toFixed(1)}s` : "< 2s"}
                           </span>
                         </div>

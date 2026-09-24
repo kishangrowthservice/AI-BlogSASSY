@@ -10,8 +10,9 @@
     "typecheck": "tsc --noEmit",
     "verify:auth": "tsx scripts/verify_authorization.ts",
     "verify:saas": "tsx scripts/verify_saas_features.ts",
+    "verify:api": "tsx scripts/verify_api_end_to_end.ts",
     "test:auth": "tsx scripts/test-authorization.ts",
-    "test": "npm run typecheck && npm run verify:auth && npm run verify:saas"
+    "test": "npm run typecheck && npm run verify:auth && npm run verify:saas && npm run verify:api"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",

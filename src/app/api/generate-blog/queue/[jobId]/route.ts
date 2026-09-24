@@ -20,10 +20,17 @@ export async function GET(
   context: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    const rawApiKey = request.headers.get("x-api-key");
+    let rawApiKey = request.headers.get("x-api-key");
+    if (!rawApiKey || !rawApiKey.trim()) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+        rawApiKey = authHeader.slice(7).trim();
+      }
+    }
+
     if (!rawApiKey || !rawApiKey.trim()) {
       return NextResponse.json(
-        { error: "Missing x-api-key header. Provide a valid tenant API key." },
+        { error: "Missing API key. Provide via 'x-api-key' header or 'Authorization: Bearer <key>'." },
         { status: 401 }
       );
     }
