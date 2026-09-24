@@ -86,6 +86,7 @@ export function TenantDashboardClient({
   const [byoGemini, setByoGemini] = useState("");
   const [isSavingByo, setIsSavingByo] = useState(false);
   const [byoSuccess, setByoSuccess] = useState(false);
+  const [byoError, setByoError] = useState<string | null>(null);
 
   // Brand DNA State
   const [brandKnowledge, setBrandKnowledge] = useState(initialProfile.brand_knowledge || "");
@@ -93,6 +94,7 @@ export function TenantDashboardClient({
   const [targetAudience, setTargetAudience] = useState(initialProfile.target_audience || "");
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [brandSuccess, setBrandSuccess] = useState(false);
+  const [brandError, setBrandError] = useState<string | null>(null);
 
   // Code Snippets Copy State
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -126,10 +128,19 @@ export function TenantDashboardClient({
   const handleSaveByoKeys = async () => {
     setIsSavingByo(true);
     setByoSuccess(false);
+    setByoError(null);
     try {
-      await updateTenantByoKeys(profile.id, byoGroq, byoGemini);
-      setByoSuccess(true);
-      setTimeout(() => setByoSuccess(false), 3000);
+      const ok = await updateTenantByoKeys(profile.id, byoGroq, byoGemini);
+      if (ok) {
+        setByoSuccess(true);
+        setTimeout(() => setByoSuccess(false), 3000);
+      } else {
+        setByoError("Failed to save BYO keys. Access denied or invalid key configuration.");
+        setTimeout(() => setByoError(null), 4000);
+      }
+    } catch (err: any) {
+      setByoError(err?.message || "Failed to save BYO keys.");
+      setTimeout(() => setByoError(null), 4000);
     } finally {
       setIsSavingByo(false);
     }
@@ -138,15 +149,24 @@ export function TenantDashboardClient({
   const handleSaveBrand = async () => {
     setIsSavingBrand(true);
     setBrandSuccess(false);
+    setBrandError(null);
     try {
-      await updateTenantBrandAction(profile.id, {
+      const res = await updateTenantBrandAction(profile.id, {
         brand_knowledge: brandKnowledge,
         tone: tone,
         target_audience: targetAudience,
         internal_links: profile.internal_links,
       });
-      setBrandSuccess(true);
-      setTimeout(() => setBrandSuccess(false), 3000);
+      if (res.success) {
+        setBrandSuccess(true);
+        setTimeout(() => setBrandSuccess(false), 3000);
+      } else {
+        setBrandError(res.error || "Failed to update brand profile.");
+        setTimeout(() => setBrandError(null), 4000);
+      }
+    } catch (err: any) {
+      setBrandError(err?.message || "Failed to update brand profile.");
+      setTimeout(() => setBrandError(null), 4000);
     } finally {
       setIsSavingBrand(false);
     }
@@ -535,6 +555,13 @@ console.log("Ready:", post.title);`;
                   Brand settings updated successfully.
                 </div>
               )}
+
+              {brandError && (
+                <div className="rounded-md bg-red-500/10 border border-red-500/20 p-2 text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {brandError}
+                </div>
+              )}
             </CardContent>
 
             <CardFooter className="border-t border-border/40 pt-4 flex justify-end">
@@ -592,6 +619,13 @@ console.log("Ready:", post.title);`;
                 <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-2 text-xs text-emerald-400 flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Custom account keys saved successfully.
+                </div>
+              )}
+
+              {byoError && (
+                <div className="rounded-md bg-red-500/10 border border-red-500/20 p-2 text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {byoError}
                 </div>
               )}
             </CardContent>

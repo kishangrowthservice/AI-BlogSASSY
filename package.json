@@ -8,8 +8,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "verify:auth": "tsx scripts/verify_authorization.ts",
     "test:auth": "tsx scripts/test-authorization.ts",
-    "test": "npm run typecheck && npm run test:auth"
+    "test": "npm run typecheck && npm run verify:auth"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",
