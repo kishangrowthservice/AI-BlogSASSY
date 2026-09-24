@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { PublicNavbar } from "@/components/navigation/PublicNavbar";
 import { PublicFooter } from "@/components/navigation/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -205,10 +204,9 @@ export function IntegrationsClient() {
         {/* Integration Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredItems.map((item) => (
-            <motion.div
+            <div
               key={item.id}
-              whileHover={{ y: -4 }}
-              transition={{ duration: 0.2 }}
+              className="transition-all duration-300 hover:-translate-y-1"
             >
               <Card className="h-full border-border/70 bg-card/50 backdrop-blur-xl flex flex-col justify-between p-6">
                 <div>
@@ -245,7 +243,7 @@ export function IntegrationsClient() {
                   </Button>
                 </div>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
 

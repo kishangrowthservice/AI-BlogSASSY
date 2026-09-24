@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { PublicNavbar } from "@/components/navigation/PublicNavbar";
 import { PublicFooter } from "@/components/navigation/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -237,12 +236,9 @@ export function FeaturesClient() {
           {PILLARS.map((pillar, idx) => {
             const isEven = idx % 2 === 0;
             return (
-              <motion.div
+              <div
                 key={pillar.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                className="transition-all duration-300 hover:-translate-y-1"
               >
                 <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-xl overflow-hidden p-6 sm:p-10">
                   <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 items-center ${isEven ? "" : "lg:flex-row-reverse"}`}>
@@ -300,7 +296,7 @@ export function FeaturesClient() {
                     </div>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             );
           })}
         </div>

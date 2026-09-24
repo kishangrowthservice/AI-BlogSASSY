@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { PublicNavbar } from "@/components/navigation/PublicNavbar";
 import { PublicFooter } from "@/components/navigation/PublicFooter";
 import { Button } from "@/components/ui/button";
@@ -217,11 +216,9 @@ export function PricingClient() {
           {PLANS.map((plan) => {
             const price = billingCycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
             return (
-              <motion.div
+              <div
                 key={plan.id}
-                whileHover={{ y: -4 }}
-                transition={{ duration: 0.2 }}
-                className="h-full"
+                className="h-full transition-all duration-300 hover:-translate-y-1"
               >
                 <Card
                   className={`h-full flex flex-col justify-between relative backdrop-blur-xl ${
@@ -289,7 +286,7 @@ export function PricingClient() {
                     </Button>
                   </CardFooter>
                 </Card>
-              </motion.div>
+              </div>
             );
           })}
         </div>

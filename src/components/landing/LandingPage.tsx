@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -122,24 +121,13 @@ console.log("Published:", article.title, article.url);`;
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
       {/* Background Animated Glow Meshes */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        <motion.div
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.15, 0.25, 0.15],
-            x: [0, 40, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-indigo-600/30 via-purple-600/20 to-emerald-500/10 rounded-full blur-[120px]"
+        <div
+          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-indigo-600/30 via-purple-600/20 to-emerald-500/10 rounded-full blur-[120px] animate-pulse"
+          style={{ animationDuration: "10s" }}
         />
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.2, 0.1],
-            x: [0, -50, 0],
-          }}
-          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[40%] right-[-10%] w-[550px] h-[450px] bg-blue-600/20 rounded-full blur-[140px]"
+        <div
+          className="absolute top-[40%] right-[-10%] w-[550px] h-[450px] bg-blue-600/20 rounded-full blur-[140px] animate-pulse"
+          style={{ animationDuration: "14s" }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
       </div>
@@ -150,49 +138,29 @@ console.log("Published:", article.title, article.url);`;
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 sm:pt-28 sm:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
         {/* Shimmer Announcement Pill */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-secondary/50 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-xs backdrop-blur-md mb-8 hover:border-primary/50 transition-colors cursor-default"
-        >
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 inline-flex items-center gap-2 rounded-full border border-border/80 bg-secondary/50 px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-xs backdrop-blur-md mb-8 hover:border-primary/50 transition-colors cursor-default">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-foreground font-semibold">Autonomous Content Engine</span>
           <Separator orientation="vertical" className="h-3 bg-border" />
           <span className="text-muted-foreground">Rank on Google &amp; Convert Readers to Clients</span>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
-        </motion.div>
+        </div>
 
         {/* Hero Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl text-foreground leading-[1.1] mb-6"
-        >
+        <h1 className="animate-in fade-in slide-in-from-bottom-3 duration-700 text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl text-foreground leading-[1.1] mb-6">
           Turn Your Blog Into a 24/7{" "}
           <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Customer Magnet
           </span>
-        </motion.h1>
+        </h1>
 
         {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-normal"
-        >
+        <p className="animate-in fade-in slide-in-from-bottom-4 duration-700 text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
           Publish human-grade, SEO-optimized articles that match your authentic brand voice and convert readers into paying clients — without spending 20+ hours a week writing.
-        </motion.p>
+        </p>
 
         {/* Primary CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex flex-wrap items-center justify-center gap-4 mb-16"
-        >
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 flex flex-wrap items-center justify-center gap-4 mb-16">
           <Button asChild size="lg" className="h-12 px-7 text-sm font-semibold shadow-lg shadow-primary/10 gap-2 group">
             <Link href={userEmail ? "/dashboard" : "/signup"}>
               {userEmail ? "Go to Your Dashboard" : "Start Free Trial"}
@@ -206,15 +174,10 @@ console.log("Published:", article.title, article.url);`;
               See Live Sample Article
             </Link>
           </Button>
-        </motion.div>
+        </div>
 
         {/* Quick Value Badges */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 max-w-4xl w-full border-y border-border/40 py-6"
-        >
+        <div className="animate-in fade-in duration-1000 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8 max-w-4xl w-full border-y border-border/40 py-6">
           <div className="flex flex-col items-center">
             <span className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               100%
@@ -247,7 +210,7 @@ console.log("Published:", article.title, article.url);`;
               Fast Setup Time
             </span>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* Interactive Live Article Preview Section */}
@@ -264,12 +227,7 @@ console.log("Published:", article.title, article.url);`;
           </p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
+        <div className="animate-in fade-in duration-700">
           <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-2xl overflow-hidden">
             {/* Window Header */}
             <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3">
@@ -398,7 +356,7 @@ console.log("Published:", article.title, article.url);`;
               </TabsContent>
             </Tabs>
           </Card>
-        </motion.div>
+        </div>
       </section>
 
       {/* How It Works (Client-Friendly 4 Steps) */}
@@ -466,7 +424,7 @@ console.log("Published:", article.title, article.url);`;
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Brand Voice */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-colors" />
               <CardHeader>
@@ -489,10 +447,10 @@ console.log("Published:", article.title, article.url);`;
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Card 2: Google Rankings */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-colors" />
               <CardHeader>
@@ -515,10 +473,10 @@ console.log("Published:", article.title, article.url);`;
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Card 3: Smart Internal Linking */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors" />
               <CardHeader>
@@ -541,10 +499,10 @@ console.log("Published:", article.title, article.url);`;
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Card 4: Never Down */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-colors" />
               <CardHeader>
@@ -567,10 +525,10 @@ console.log("Published:", article.title, article.url);`;
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Card 5: Multi-Site Agency Ready */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl group-hover:bg-sky-500/20 transition-colors" />
               <CardHeader>
@@ -593,10 +551,10 @@ console.log("Published:", article.title, article.url);`;
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Card 6: Easy Publishing */}
-          <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="h-full border-border/70 bg-card/40 backdrop-blur-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl group-hover:bg-pink-500/20 transition-colors" />
               <CardHeader>
@@ -619,7 +577,7 @@ console.log("Published:", article.title, article.url);`;
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -798,7 +756,7 @@ console.log("Published:", article.title, article.url);`;
           </Card>
 
           {/* Pro Plan (Highlighted) */}
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <div className="transition-all duration-300 hover:-translate-y-1">
             <Card className="border-indigo-500/50 bg-card/80 backdrop-blur-xl relative shadow-xl shadow-indigo-500/10 flex flex-col justify-between h-full">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 text-[11px] px-3 font-semibold">
@@ -849,7 +807,7 @@ console.log("Published:", article.title, article.url);`;
                 </Button>
               </CardFooter>
             </Card>
-          </motion.div>
+          </div>
 
           {/* Scale Plan */}
           <Card className="border-border/70 bg-card/40 backdrop-blur-xl flex flex-col justify-between">
