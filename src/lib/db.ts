@@ -130,9 +130,10 @@ export async function recordGenerationLog(log: import("./types").GenerationLog):
     const supabase = getDbClient();
     const { error } = await supabase.from("generation_logs").insert([log]);
     if (error) {
-      if (log.title && error.message.includes("title")) {
-        const { title: _, ...rest } = log;
-        await supabase.from("generation_logs").insert([rest]);
+      // Fallback if newer columns not yet deployed on remote instance
+      if (error.message.includes("content") || error.message.includes("title") || error.message.includes("meta_description")) {
+        const { content: _c, meta_description: _m, suggested_tags: _s, title: _t, ...minimal } = log;
+        await supabase.from("generation_logs").insert([minimal]);
       } else {
         console.error("[db] Error recording generation_log:", error.message);
       }

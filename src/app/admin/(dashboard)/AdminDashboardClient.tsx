@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import type { GenerationLog } from "@/lib/types";
 import type { SafeSiteProfile } from "@/lib/sanitize";
 import type { ObservabilityStats } from "@/lib/adminActions";
-import { onboardTenantAction, toggleTenantStatus } from "@/lib/serverActions";
+import { onboardTenantAction, toggleTenantStatus, adminUpdateTenantQuotaAction } from "@/lib/serverActions";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,6 +97,56 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
   // Cron queue runner state
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [cronResult, setCronResult] = useState<{ processed?: number; successful?: number } | null>(null);
+
+  // Tenant Quota & Plan Management Modal State
+  const [quotaTargetProfile, setQuotaTargetProfile] = useState<SafeSiteProfile | null>(null);
+  const [editMonthlyQuota, setEditMonthlyQuota] = useState<number>(30);
+  const [editPlanTier, setEditPlanTier] = useState<string>("starter");
+  const [isSavingQuota, setIsSavingQuota] = useState(false);
+  const [quotaSaveError, setQuotaSaveError] = useState<string | null>(null);
+  const [quotaSaveSuccess, setQuotaSaveSuccess] = useState(false);
+
+  const handleOpenQuotaModal = (p: SafeSiteProfile) => {
+    setQuotaTargetProfile(p);
+    setEditMonthlyQuota(p.monthly_quota || 30);
+    setEditPlanTier(p.plan_tier || "starter");
+    setQuotaSaveError(null);
+    setQuotaSaveSuccess(false);
+  };
+
+  const handleSaveTenantQuota = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quotaTargetProfile) return;
+    setIsSavingQuota(true);
+    setQuotaSaveError(null);
+    try {
+      const res = await adminUpdateTenantQuotaAction(
+        quotaTargetProfile.id,
+        editMonthlyQuota,
+        editPlanTier
+      );
+      if (res.success) {
+        setProfiles((prev) =>
+          prev.map((p) =>
+            p.id === quotaTargetProfile.id
+              ? { ...p, monthly_quota: editMonthlyQuota, plan_tier: editPlanTier }
+              : p
+          )
+        );
+        setQuotaSaveSuccess(true);
+        setTimeout(() => {
+          setQuotaTargetProfile(null);
+          setQuotaSaveSuccess(false);
+        }, 1200);
+      } else {
+        setQuotaSaveError(res.error || "Failed to update quota");
+      }
+    } catch (err: any) {
+      setQuotaSaveError(err?.message || "Failed to update quota");
+    } finally {
+      setIsSavingQuota(false);
+    }
+  };
 
   // Form states
   const [siteName, setSiteName] = useState("");
@@ -459,8 +509,13 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                                   <ExternalLink className="h-3 w-3" />
                                 </a>
                               </div>
-                              <div className="text-[11px] text-muted-foreground font-mono">
-                                {profile.domain}
+                              <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5 mt-0.5">
+                                <span>{profile.domain}</span>
+                                {profile.plan_tier && (
+                                  <Badge variant="outline" className="text-[9px] uppercase font-semibold tracking-wider text-purple-400 border-purple-500/30 py-0 px-1">
+                                    {profile.plan_tier}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -548,6 +603,13 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                               >
                                 <Key className="h-3.5 w-3.5" />
                                 Copy Key Prefix
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleOpenQuotaModal(profile)}
+                                className="gap-2 cursor-pointer text-indigo-400"
+                              >
+                                <Sliders className="h-3.5 w-3.5" />
+                                Adjust Quota &amp; Plan
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -1099,6 +1161,93 @@ console.log(post.content);`}
           )}
         </SheetContent>
       </Sheet>
+
+      {/* MANAGE QUOTA & PLAN MODAL */}
+      <Dialog
+        open={Boolean(quotaTargetProfile)}
+        onOpenChange={(open) => !open && setQuotaTargetProfile(null)}
+      >
+        <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-md p-6">
+          <DialogHeader>
+            <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-2">
+              <Sliders className="h-5 w-5 text-indigo-400" />
+            </div>
+            <DialogTitle className="text-lg font-bold text-foreground">
+              Adjust Tenant Quota &amp; Plan
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Set monthly article generation limit and billing tier for {quotaTargetProfile?.site_name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {quotaTargetProfile && (
+            <form onSubmit={handleSaveTenantQuota} className="space-y-4 my-2 text-xs">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Monthly Article Limit</label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={50000}
+                  value={editMonthlyQuota}
+                  onChange={(e) => setEditMonthlyQuota(Number(e.target.value))}
+                  className="bg-background/80 text-xs font-mono"
+                  required
+                />
+                <span className="text-[11px] text-muted-foreground">Currently used: {quotaTargetProfile.used_quota || 0} articles</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Assigned Plan Tier</label>
+                <select
+                  value={editPlanTier}
+                  onChange={(e) => setEditPlanTier(e.target.value)}
+                  className="w-full h-9 rounded-md border border-border/80 bg-background/80 px-3 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="starter">Starter (30 articles/mo)</option>
+                  <option value="pro">Pro (100 articles/mo)</option>
+                  <option value="agency">Agency (300 articles/mo)</option>
+                  <option value="enterprise">Enterprise (Unlimited / Custom)</option>
+                </select>
+              </div>
+
+              {quotaSaveSuccess && (
+                <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-2.5 text-xs text-emerald-400 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <span>Quota &amp; Plan updated successfully!</span>
+                </div>
+              )}
+
+              {quotaSaveError && (
+                <div className="rounded-md bg-red-500/10 border border-red-500/30 p-2.5 text-xs text-red-300 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                  <span>{quotaSaveError}</span>
+                </div>
+              )}
+
+              <DialogFooter className="pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setQuotaTargetProfile(null)}
+                  disabled={isSavingQuota}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingQuota || editMonthlyQuota < 1}
+                  className="text-xs font-semibold"
+                >
+                  {isSavingQuota ? "Saving Changes..." : "Save Quota & Plan"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

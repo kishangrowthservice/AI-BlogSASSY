@@ -1,5 +1,6 @@
 import { getDbClient, releaseTenantQuota, recordGenerationLog } from "./db";
 import { generateBlogPostResilient } from "./blogEngineFallback";
+import { dispatchCmsWebhook } from "./webhookDispatcher";
 import type { QueueJob, GenerateBlogParams, SiteProfile } from "./types";
 
 // In-memory fallback queue for development and local testing
@@ -162,6 +163,9 @@ export async function processNextQueueJobs(
       await recordGenerationLog({
         site_id: job.site_id,
         title: post.title,
+        content: post.content,
+        meta_description: post.metaDescription,
+        suggested_tags: post.suggestedTags,
         provider_used: telemetry.provider_used,
         model: telemetry.model,
         prompt_tokens: telemetry.prompt_tokens,
@@ -172,6 +176,13 @@ export async function processNextQueueJobs(
         status: "success",
         fallback_triggered: telemetry.fallback_triggered,
       });
+
+      // Dispatch outbound CMS webhook if configured
+      if (siteProfile.webhook_url) {
+        dispatchCmsWebhook(siteProfile, post, telemetry).catch((err) => {
+          console.warn("[queueService] CMS webhook delivery failed:", err);
+        });
+      }
 
       successful++;
     } catch (err: unknown) {

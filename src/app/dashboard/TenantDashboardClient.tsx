@@ -31,6 +31,7 @@ import {
   updateTenantByoKeys,
   updateTenantBrandAction,
   updateTenantWebhookAction,
+  generateDashboardBlogAction,
   type UserSiteSummary,
 } from "@/lib/serverActions";
 import { PLAN_TIERS, getPlanTier } from "@/lib/billing";
@@ -142,9 +143,91 @@ export function TenantDashboardClient({
   const [webhookSuccess, setWebhookSuccess] = useState(false);
   const [webhookError, setWebhookError] = useState<string | null>(null);
 
+  // Generate Article Studio State
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [genTopic, setGenTopic] = useState("");
+  const [genKeywords, setGenKeywords] = useState("");
+  const [genTargetWordCount, setGenTargetWordCount] = useState(1200);
+  const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
+  const [generatedArticleResult, setGeneratedArticleResult] = useState<{
+    title: string;
+    metaDescription: string;
+    content: string;
+    suggestedTags: string[];
+    telemetry?: any;
+  } | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [copiedGeneratedContent, setCopiedGeneratedContent] = useState(false);
+  const [copiedGeneratedMeta, setCopiedGeneratedMeta] = useState(false);
+
   // Article History Modal State
   const [inspectedLog, setInspectedLog] = useState<GenerationLog | null>(null);
   const [copiedLogTitle, setCopiedLogTitle] = useState(false);
+  const [copiedLogContent, setCopiedLogContent] = useState(false);
+  const [copiedLogMeta, setCopiedLogMeta] = useState(false);
+  const [logViewTab, setLogViewTab] = useState<"preview" | "html" | "telemetry">("preview");
+
+  const handleGenerateArticle = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!genTopic.trim()) return;
+    setIsGeneratingArticle(true);
+    setGenError(null);
+    setGeneratedArticleResult(null);
+
+    try {
+      const keywordsArr = genKeywords
+        .split(",")
+        .map((k) => k.trim())
+        .filter(Boolean);
+
+      const res = await generateDashboardBlogAction(profile.id, {
+        topic: genTopic.trim(),
+        keywords: keywordsArr.length > 0 ? keywordsArr : undefined,
+        wordCount: genTargetWordCount,
+      });
+
+      if (!res.success || !res.post) {
+        setGenError(res.error || "Failed to generate blog post.");
+        return;
+      }
+
+      setGeneratedArticleResult({
+        title: res.post.title,
+        metaDescription: res.post.metaDescription,
+        content: res.post.content,
+        suggestedTags: res.post.suggestedTags,
+        telemetry: res.telemetry,
+      });
+
+      // Increment profile used quota
+      setProfile((prev) => ({
+        ...prev,
+        used_quota: (prev.used_quota || 0) + 1,
+      }));
+
+      // Prepend to logs
+      const newLog: GenerationLog = {
+        id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        site_id: profile.id,
+        model: res.telemetry?.model || "groq/llama-3.3-70b-versatile",
+        provider_used: res.telemetry?.provider_used || "groq",
+        latency_ms: res.telemetry?.latency_ms || 0,
+        total_tokens: res.telemetry?.total_tokens || 0,
+        fallback_triggered: Boolean(res.telemetry?.fallback_triggered),
+        status: "success",
+        title: res.post.title,
+        content: res.post.content,
+        meta_description: res.post.metaDescription,
+        suggested_tags: res.post.suggestedTags,
+        created_at: new Date().toISOString(),
+      };
+      setLogs((prev) => [newLog, ...prev]);
+    } catch (err: any) {
+      setGenError(err?.message || "An unexpected error occurred during generation.");
+    } finally {
+      setIsGeneratingArticle(false);
+    }
+  };
 
   // Code Snippets Copy State
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -443,6 +526,19 @@ console.log("Ready:", post.title);`;
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              onClick={() => {
+                setShowGenerateModal(true);
+                setGenError(null);
+                setGeneratedArticleResult(null);
+              }}
+              className="text-xs gap-1.5 font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/20"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+              Generate Article
+            </Button>
+
             <Button
               size="sm"
               variant="outline"
@@ -964,11 +1060,26 @@ console.log("Ready:", post.title);`;
 
         {/* Recent Published Articles */}
         <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-bold">Recent Published Articles</CardTitle>
-            <CardDescription className="text-xs">
-              History of all articles generated and delivered for this website. Click any row to view telemetry details.
-            </CardDescription>
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-bold">Recent Published Articles</CardTitle>
+              <CardDescription className="text-xs">
+                History of all articles generated and delivered for this website. Click any row to view full content, copy HTML, or inspect telemetry.
+              </CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowGenerateModal(true);
+                setGenError(null);
+                setGeneratedArticleResult(null);
+              }}
+              className="text-xs gap-1.5 border-purple-500/40 text-purple-300 hover:text-purple-200 hover:border-purple-500"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+              New Article
+            </Button>
           </CardHeader>
 
           <CardContent>
@@ -1154,43 +1265,145 @@ console.log("Ready:", post.title);`;
 
       {/* ARTICLE LOG DETAILS DIALOG */}
       <Dialog open={Boolean(inspectedLog)} onOpenChange={(open) => !open && setInspectedLog(null)}>
-        <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-lg p-6">
+        <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-3xl max-h-[85vh] overflow-y-auto p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-foreground">
-              Article Generation Details
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Telemetry and request diagnostics for this generated post.
-            </DialogDescription>
+            <div className="flex items-center justify-between pr-6">
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  {inspectedLog?.title || "Article Details"}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Generated {inspectedLog?.created_at ? new Date(inspectedLog.created_at).toLocaleDateString() : ""} via {inspectedLog?.provider_used} ({inspectedLog?.model})
+                </DialogDescription>
+              </div>
+              <Badge variant="outline" className={`text-[10px] ${inspectedLog?.status === "success" ? "text-emerald-400 border-emerald-500/30" : "text-red-400 border-red-500/30"}`}>
+                {inspectedLog?.status === "success" ? "PUBLISHED" : "FAILED"}
+              </Badge>
+            </div>
           </DialogHeader>
 
           {inspectedLog && (
-            <div className="space-y-3 my-2 text-xs">
-              <div className="p-3 bg-background/70 border border-border/60 rounded-lg">
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Article Title</span>
-                <p className="font-semibold text-foreground text-sm mt-0.5">{inspectedLog.title || "Untitled Post"}</p>
-              </div>
+            <div className="space-y-4 my-2 text-xs">
+              {/* Meta Description */}
+              {inspectedLog.meta_description && (
+                <div className="p-3 bg-muted/20 border border-border/40 rounded-lg space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">SEO Meta Description</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[11px] gap-1 px-1.5 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inspectedLog.meta_description || "");
+                        setCopiedLogMeta(true);
+                        setTimeout(() => setCopiedLogMeta(false), 2000);
+                      }}
+                    >
+                      {copiedLogMeta ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                      {copiedLogMeta ? "Copied" : "Copy Meta"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-foreground leading-relaxed">{inspectedLog.meta_description}</p>
+                </div>
+              )}
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
-                  <span className="text-[10px] text-muted-foreground">Provider &amp; Model</span>
-                  <p className="font-mono font-medium text-foreground">{inspectedLog.provider_used} ({inspectedLog.model})</p>
+              {/* Suggested Tags */}
+              {inspectedLog.suggested_tags && inspectedLog.suggested_tags.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mr-1">Tags:</span>
+                  {inspectedLog.suggested_tags.map((tag, tIdx) => (
+                    <Badge key={tIdx} variant="secondary" className="text-[10px] py-0 px-2 bg-muted/40">
+                      #{tag}
+                    </Badge>
+                  ))}
                 </div>
-                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
-                  <span className="text-[10px] text-muted-foreground">Total Latency</span>
-                  <p className="font-mono font-medium text-foreground">{inspectedLog.latency_ms ? `${inspectedLog.latency_ms} ms` : "N/A"}</p>
+              )}
+
+              {/* If article has full content, show Preview / HTML tabs */}
+              {inspectedLog.content ? (
+                <Tabs value={logViewTab} onValueChange={(v: any) => setLogViewTab(v)} className="w-full">
+                  <div className="flex items-center justify-between border-b border-border/40 pb-1 mb-2">
+                    <TabsList className="bg-muted/30 h-7 p-0.5">
+                      <TabsTrigger value="preview" className="text-[11px] h-6 px-2.5">
+                        Preview
+                      </TabsTrigger>
+                      <TabsTrigger value="html" className="text-[11px] h-6 px-2.5">
+                        HTML Source
+                      </TabsTrigger>
+                      <TabsTrigger value="telemetry" className="text-[11px] h-6 px-2.5">
+                        Telemetry
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => {
+                        navigator.clipboard.writeText(inspectedLog.content || "");
+                        setCopiedLogContent(true);
+                        setTimeout(() => setCopiedLogContent(false), 2000);
+                      }}
+                    >
+                      {copiedLogContent ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                      {copiedLogContent ? "Copied HTML" : "Copy HTML"}
+                    </Button>
+                  </div>
+
+                  <TabsContent value="preview" className="m-0 max-h-[350px] overflow-y-auto p-4 rounded-lg bg-background/80 border border-border/60 prose prose-invert prose-sm max-w-none">
+                    <div dangerouslySetInnerHTML={{ __html: inspectedLog.content }} />
+                  </TabsContent>
+
+                  <TabsContent value="html" className="m-0 max-h-[350px] overflow-y-auto p-3 rounded-lg bg-black/80 border border-border/60 font-mono text-[11px] text-emerald-300 leading-relaxed whitespace-pre-wrap select-all">
+                    {inspectedLog.content}
+                  </TabsContent>
+
+                  <TabsContent value="telemetry" className="m-0 space-y-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                        <span className="text-[10px] text-muted-foreground">Provider &amp; Model</span>
+                        <p className="font-mono font-medium text-foreground truncate">{inspectedLog.provider_used} ({inspectedLog.model})</p>
+                      </div>
+                      <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                        <span className="text-[10px] text-muted-foreground">Total Latency</span>
+                        <p className="font-mono font-medium text-foreground">{inspectedLog.latency_ms ? `${inspectedLog.latency_ms} ms` : "N/A"}</p>
+                      </div>
+                      <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                        <span className="text-[10px] text-muted-foreground">Token Consumption</span>
+                        <p className="font-mono font-medium text-foreground">{inspectedLog.total_tokens || "N/A"} tokens</p>
+                      </div>
+                      <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                        <span className="text-[10px] text-muted-foreground">Status</span>
+                        <Badge variant="outline" className={`mt-0.5 text-[10px] ${inspectedLog.status === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                          {inspectedLog.status.toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                /* Legacy log telemetry display */
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                    <span className="text-[10px] text-muted-foreground">Provider &amp; Model</span>
+                    <p className="font-mono font-medium text-foreground">{inspectedLog.provider_used} ({inspectedLog.model})</p>
+                  </div>
+                  <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                    <span className="text-[10px] text-muted-foreground">Total Latency</span>
+                    <p className="font-mono font-medium text-foreground">{inspectedLog.latency_ms ? `${inspectedLog.latency_ms} ms` : "N/A"}</p>
+                  </div>
+                  <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                    <span className="text-[10px] text-muted-foreground">Token Consumption</span>
+                    <p className="font-mono font-medium text-foreground">{inspectedLog.total_tokens || "N/A"} tokens</p>
+                  </div>
+                  <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                    <span className="text-[10px] text-muted-foreground">Generation Status</span>
+                    <Badge variant="outline" className={`mt-0.5 text-[10px] ${inspectedLog.status === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                      {inspectedLog.status.toUpperCase()}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
-                  <span className="text-[10px] text-muted-foreground">Token Consumption</span>
-                  <p className="font-mono font-medium text-foreground">{inspectedLog.total_tokens || "N/A"} tokens</p>
-                </div>
-                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
-                  <span className="text-[10px] text-muted-foreground">Generation Status</span>
-                  <Badge variant="outline" className={`mt-0.5 text-[10px] ${inspectedLog.status === "success" ? "text-emerald-400" : "text-red-400"}`}>
-                    {inspectedLog.status.toUpperCase()}
-                  </Badge>
-                </div>
-              </div>
+              )}
 
               {inspectedLog.error_message && (
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-[11px]">
@@ -1200,7 +1413,7 @@ console.log("Ready:", post.title);`;
             </div>
           )}
 
-          <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2">
+          <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2 border-t border-border/40">
             <Button
               type="button"
               variant="outline"
@@ -1220,6 +1433,196 @@ console.log("Ready:", post.title);`;
               Done
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* GENERATE ARTICLE STUDIO MODAL */}
+      <Dialog open={showGenerateModal} onOpenChange={(open) => !open && setShowGenerateModal(false)}>
+        <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-2xl max-h-[85vh] overflow-y-auto p-6">
+          <DialogHeader>
+            <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2">
+              <Sparkles className="h-5 w-5 text-purple-400" />
+            </div>
+            <DialogTitle className="text-lg font-bold text-foreground">
+              Live Article Generation Studio
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Generate an SEO-optimized blog article with your brand voice, internal links, and automatic CMS webhook dispatch.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!generatedArticleResult ? (
+            <form onSubmit={handleGenerateArticle} className="space-y-4 my-2 text-xs">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Article Topic or Headline *</label>
+                <Input
+                  required
+                  placeholder="e.g. 10 Proven SEO Strategies to Grow SaaS Organic Traffic in 2026"
+                  value={genTopic}
+                  onChange={(e) => setGenTopic(e.target.value)}
+                  className="bg-background/80 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Primary &amp; Secondary Keywords (Optional)</label>
+                <Input
+                  placeholder="e.g. saas seo, organic traffic, b2b content marketing (comma-separated)"
+                  value={genKeywords}
+                  onChange={(e) => setGenKeywords(e.target.value)}
+                  className="bg-background/80 text-xs"
+                />
+                <span className="text-[11px] text-muted-foreground">Separate keywords with commas.</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Target Word Count</label>
+                <select
+                  value={genTargetWordCount}
+                  onChange={(e) => setGenTargetWordCount(Number(e.target.value))}
+                  className="w-full h-9 rounded-md border border-border/80 bg-background/80 px-3 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value={800}>~800 words (Quick Guide)</option>
+                  <option value={1200}>~1,200 words (Standard Deep Dive - Recommended)</option>
+                  <option value={1600}>~1,600 words (Comprehensive Pillar Post)</option>
+                  <option value={2000}>~2,000 words (Ultimate Authority Guide)</option>
+                </select>
+              </div>
+
+              {genError && (
+                <div className="rounded-md bg-red-500/10 border border-red-500/30 p-2.5 text-xs text-red-300 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                  <span>{genError}</span>
+                </div>
+              )}
+
+              <DialogFooter className="pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGenerateModal(false)}
+                  disabled={isGeneratingArticle}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isGeneratingArticle || !genTopic.trim()}
+                  className="text-xs font-semibold gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+                >
+                  {isGeneratingArticle ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Generating Article...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                      Generate Article Now
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <div className="space-y-4 my-2 text-xs">
+              <div className="rounded-md bg-emerald-500/10 border border-emerald-500/30 p-3 text-emerald-300 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span className="font-semibold text-xs">Article Generated Successfully!</span>
+                </div>
+                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30">
+                  {generatedArticleResult.telemetry?.provider_used || "groq"} ({generatedArticleResult.telemetry?.latency_ms ? `${Math.round(generatedArticleResult.telemetry.latency_ms / 1000)}s` : "< 2s"})
+                </Badge>
+              </div>
+
+              <div className="p-3 bg-background/80 border border-border/60 rounded-lg space-y-1">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Title</span>
+                <h4 className="text-sm font-bold text-foreground">{generatedArticleResult.title}</h4>
+              </div>
+
+              <div className="p-3 bg-muted/20 border border-border/40 rounded-lg space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Meta Description</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[11px] gap-1 px-1.5 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedArticleResult.metaDescription);
+                      setCopiedGeneratedMeta(true);
+                      setTimeout(() => setCopiedGeneratedMeta(false), 2000);
+                    }}
+                  >
+                    {copiedGeneratedMeta ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                    {copiedGeneratedMeta ? "Copied" : "Copy"}
+                  </Button>
+                </div>
+                <p className="text-xs text-foreground leading-relaxed">{generatedArticleResult.metaDescription}</p>
+              </div>
+
+              {generatedArticleResult.suggestedTags && generatedArticleResult.suggestedTags.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mr-1">Tags:</span>
+                  {generatedArticleResult.suggestedTags.map((tag, tIdx) => (
+                    <Badge key={tIdx} variant="secondary" className="text-[10px] py-0 px-2 bg-muted/40">
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-foreground">Article Preview &amp; HTML</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedArticleResult.content);
+                      setCopiedGeneratedContent(true);
+                      setTimeout(() => setCopiedGeneratedContent(false), 2000);
+                    }}
+                  >
+                    {copiedGeneratedContent ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                    {copiedGeneratedContent ? "Copied Full HTML" : "Copy Full HTML"}
+                  </Button>
+                </div>
+
+                <div className="max-h-[300px] overflow-y-auto p-4 rounded-lg bg-background/80 border border-border/60 prose prose-invert prose-sm max-w-none">
+                  <div dangerouslySetInnerHTML={{ __html: generatedArticleResult.content }} />
+                </div>
+              </div>
+
+              <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2 border-t border-border/40">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setGeneratedArticleResult(null);
+                    setGenTopic("");
+                    setGenKeywords("");
+                  }}
+                  className="text-xs"
+                >
+                  Generate Another
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setShowGenerateModal(false)}
+                  className="text-xs"
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -92,6 +92,9 @@ export interface GenerationLog {
   status: "success" | "failed";
   error_message?: string;
   fallback_triggered: boolean;
+  content?: string;
+  meta_description?: string;
+  suggested_tags?: string[];
   created_at?: string;
 }
 

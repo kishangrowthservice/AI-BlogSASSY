@@ -105,6 +105,57 @@ async function runSaaSFeaturesVerification() {
     "updateTenantWebhookAction rejects unauthenticated callers"
   );
 
+  // -------------------------------------------------------------
+  // Test 5: Outbound CMS Webhook Payload & HMAC Cryptographic Signature
+  // -------------------------------------------------------------
+  console.log("\n--- 5. Outbound CMS Webhook Payload & HMAC Cryptographic Signatures ---");
+  const { buildWebhookPayload, computeWebhookSignature } = await import("../src/lib/webhookDispatcher");
+
+  const mockPost = {
+    title: "10 SEO Tips for SaaS Founders",
+    metaDescription: "Boost your organic conversions with these actionable tips.",
+    content: "<h1>10 SEO Tips</h1><p>Actionable advice...</p>",
+    suggestedTags: ["seo", "saas", "growth"],
+  };
+  const mockTelemetry = {
+    provider_used: "groq" as const,
+    model: "openai/gpt-oss-120b",
+    latency_ms: 1250,
+    total_tokens: 850,
+    fallback_triggered: false,
+  };
+
+  const payload = buildWebhookPayload(testProfile, mockPost, mockTelemetry);
+  assert(payload.event === "article.published", "Webhook event is article.published");
+  assert(payload.article.title === mockPost.title, "Webhook payload contains post title");
+  assert(payload.article.content === mockPost.content, "Webhook payload contains full HTML content");
+  assert(payload.site_id === testSiteId, "Webhook payload contains correct site ID");
+
+  const webhookSecret = "whsec_test_secret_key_123456789";
+  const rawBody = JSON.stringify(payload);
+  const signature = computeWebhookSignature(rawBody, webhookSecret);
+
+  // Verify HMAC mathematically
+  const expectedHash = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+  assert(signature === expectedHash, "HMAC signature matches expected cryptographic hash");
+
+  // Tamper detection
+  const tamperedBody = rawBody + "tampered";
+  const tamperedHash = crypto.createHmac("sha256", webhookSecret).update(tamperedBody).digest("hex");
+  assert(signature !== tamperedHash, "HMAC signature detects any tampering of payload");
+
+  // -------------------------------------------------------------
+  // Test 6: Admin Quota & Plan Management Authorization Boundary
+  // -------------------------------------------------------------
+  console.log("\n--- 6. Admin Quota & Plan Management Authorization Boundary ---");
+  const { adminUpdateTenantQuotaAction } = await import("../src/lib/serverActions");
+
+  const unauthQuotaUpdate = await adminUpdateTenantQuotaAction(testSiteId, 500, "agency");
+  assert(
+    unauthQuotaUpdate.success === false && Boolean(unauthQuotaUpdate.error?.includes("Admin session required")),
+    "adminUpdateTenantQuotaAction rejects non-admin callers"
+  );
+
   console.log("\n=================================================");
   console.log(`  VERIFICATION RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log("=================================================");

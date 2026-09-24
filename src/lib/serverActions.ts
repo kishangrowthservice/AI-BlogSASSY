@@ -2,9 +2,11 @@
 
 import crypto from "crypto";
 import { cookies } from "next/headers";
-import { getDbClient, hashApiKey, localSiteProfiles } from "./db";
+import { getDbClient, hashApiKey, localSiteProfiles, reserveTenantQuota, releaseTenantQuota, recordGenerationLog } from "./db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
-import type { SiteProfile, GenerationLog } from "./types";
+import { generateBlogPostResilient } from "./blogEngineFallback";
+import { dispatchCmsWebhook } from "./webhookDispatcher";
+import type { SiteProfile, GenerationLog, GenerateBlogParams, GeneratedBlogPost, GenerationTelemetry } from "./types";
 import { toSafeSiteProfile, type SafeSiteProfile } from "./sanitize";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
 
@@ -649,6 +651,150 @@ export async function updateTenantWebhookAction(
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err?.message || "Failed to update webhook URL" };
+  }
+}
+
+export interface DashboardGenerateResult {
+  success: boolean;
+  post?: GeneratedBlogPost;
+  telemetry?: GenerationTelemetry;
+  usedQuota?: number;
+  monthlyQuota?: number;
+  error?: string;
+}
+
+/**
+ * Generates an article directly from the authenticated tenant dashboard.
+ * Atomically reserves quota, generates post with resilient dual-LLM fallback,
+ * persists full content to database logs, and dispatches outbound CMS webhooks.
+ */
+export async function generateDashboardBlogAction(
+  siteId: string,
+  params: GenerateBlogParams
+): Promise<DashboardGenerateResult> {
+  let quotaReserved = false;
+  try {
+    if (!siteId) return { success: false, error: "Site ID is required" };
+    if (!params.topic || !params.topic.trim()) {
+      return { success: false, error: "Topic is required" };
+    }
+
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized. You do not own this website profile." };
+    }
+
+    // Retrieve profile
+    let profile: SiteProfile | null = null;
+    try {
+      const db = getDbClient();
+      const { data } = await db.from("site_profiles").select("*").eq("id", siteId).single();
+      if (data) profile = data as SiteProfile;
+    } catch {
+      // Local fallback
+    }
+    if (!profile) profile = localSiteProfiles.get(siteId) || null;
+    if (!profile) return { success: false, error: "Site profile not found" };
+
+    // Atomically reserve quota slot
+    const reservation = await reserveTenantQuota(siteId);
+    quotaReserved = reservation.reserved;
+    if (!reservation.reserved) {
+      return {
+        success: false,
+        error: `Monthly quota exceeded (${reservation.used_quota}/${reservation.monthly_quota}). Please upgrade your plan.`,
+      };
+    }
+
+    // Clamp parameters
+    const safeTopic = params.topic.trim().slice(0, 500);
+    const safeWordCount =
+      typeof params.wordCount === "number" && !isNaN(params.wordCount)
+        ? Math.min(Math.max(Math.round(params.wordCount), 200), 3000)
+        : 1000;
+
+    const safeParams: GenerateBlogParams = {
+      ...params,
+      topic: safeTopic,
+      wordCount: safeWordCount,
+    };
+
+    const { post, telemetry } = await generateBlogPostResilient(profile, safeParams);
+
+    // Save full post content in generation_logs
+    await recordGenerationLog({
+      site_id: siteId,
+      title: post.title,
+      content: post.content,
+      meta_description: post.metaDescription,
+      suggested_tags: post.suggestedTags,
+      provider_used: telemetry.provider_used,
+      model: telemetry.model,
+      prompt_tokens: telemetry.prompt_tokens,
+      completion_tokens: telemetry.completion_tokens,
+      total_tokens: telemetry.total_tokens,
+      latency_ms: telemetry.latency_ms,
+      finish_reason: telemetry.finish_reason,
+      status: "success",
+      fallback_triggered: telemetry.fallback_triggered,
+    });
+
+    // Outbound CMS Webhook
+    if (profile.webhook_url) {
+      dispatchCmsWebhook(profile, post, telemetry).catch((err) => {
+        console.warn("[dashboardAction] Webhook delivery failed:", err);
+      });
+    }
+
+    return {
+      success: true,
+      post,
+      telemetry,
+      usedQuota: reservation.used_quota,
+      monthlyQuota: reservation.monthly_quota,
+    };
+  } catch (err: unknown) {
+    if (quotaReserved) {
+      await releaseTenantQuota(siteId).catch(() => {});
+    }
+    const message = err instanceof Error ? err.message : "Failed to generate blog post";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Admin action to adjust tenant monthly quota and plan tier.
+ */
+export async function adminUpdateTenantQuotaAction(
+  siteId: string,
+  monthlyQuota: number,
+  planTier?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const isAuthorized = await verifyAdminAuth();
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized. Admin session required." };
+    }
+
+    const updates: Record<string, any> = { monthly_quota: monthlyQuota };
+    if (planTier) updates.plan_tier = planTier;
+
+    try {
+      const db = getDbClient();
+      await db.from("site_profiles").update(updates).eq("id", siteId);
+    } catch {
+      // Local fallback
+    }
+
+    const local = localSiteProfiles.get(siteId);
+    if (local) {
+      local.monthly_quota = monthlyQuota;
+      if (planTier) local.plan_tier = planTier;
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to update tenant quota" };
   }
 }
 

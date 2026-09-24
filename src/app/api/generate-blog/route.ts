@@ -3,6 +3,7 @@ import { getSiteProfileByApiKey, reserveTenantQuota, releaseTenantQuota, recordG
 import { generateBlogPostResilient } from "@/lib/blogEngineFallback";
 import { checkTenantRateLimit } from "@/lib/rateLimiter";
 import { enqueueGenerationJob } from "@/lib/queueService";
+import { dispatchCmsWebhook } from "@/lib/webhookDispatcher";
 import type { SiteProfile } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -137,10 +138,13 @@ export async function POST(request: Request) {
     // 5. Invoke Resilient LLM Orchestrator
     const { post, telemetry } = await generateBlogPostResilient(siteProfile, safeParams);
 
-    // 6. Record telemetry row asynchronously in generation_logs (§5, §10, §11)
+    // 6. Record telemetry and full post content in generation_logs (§5, §10, §11)
     await recordGenerationLog({
       site_id: siteProfile.id,
       title: post.title,
+      content: post.content,
+      meta_description: post.metaDescription,
+      suggested_tags: post.suggestedTags,
       provider_used: telemetry.provider_used,
       model: telemetry.model,
       prompt_tokens: telemetry.prompt_tokens,
@@ -151,6 +155,13 @@ export async function POST(request: Request) {
       status: "success",
       fallback_triggered: telemetry.fallback_triggered,
     });
+
+    // 6.5. Asynchronously dispatch to customer's outbound CMS webhook (non-blocking)
+    if (siteProfile.webhook_url) {
+      dispatchCmsWebhook(siteProfile, post, telemetry).catch((err) => {
+        console.warn("[generate-blog] CMS webhook delivery failed:", err);
+      });
+    }
 
     return NextResponse.json(post, { status: 200, headers: corsHeaders });
   } catch (err: unknown) {
