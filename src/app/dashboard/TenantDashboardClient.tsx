@@ -202,7 +202,7 @@ export function TenantDashboardClient({
           )}
 
           {currentTab === "ai-engines" && (
-            <AiEnginesTab profile={profile} />
+            <AiEnginesTab profile={profile} logs={logs} />
           )}
 
           {currentTab === "billing" && (
