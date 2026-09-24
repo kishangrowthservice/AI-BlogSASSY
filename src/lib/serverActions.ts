@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { getDbClient, hashApiKey, localSiteProfiles, reserveTenantQuota, releaseTenantQuota, recordGenerationLog } from "./db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateBlogPostResilient } from "./blogEngineFallback";
-import { dispatchCmsWebhook } from "./webhookDispatcher";
+import { dispatchCmsWebhook, computeWebhookSignature } from "./webhookDispatcher";
 import type { SiteProfile, GenerationLog, GenerateBlogParams, GeneratedBlogPost, GenerationTelemetry } from "./types";
 import { toSafeSiteProfile, type SafeSiteProfile } from "./sanitize";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
@@ -653,6 +653,109 @@ export async function updateTenantWebhookAction(
     return { success: false, error: err?.message || "Failed to update webhook URL" };
   }
 }
+
+/**
+ * Dispatches a simulated test ping to verify endpoint connectivity, response latency, and HMAC signature calculation.
+ */
+export async function testWebhookPingAction(
+  siteId: string,
+  webhookUrl: string
+): Promise<{ success: boolean; statusCode?: number; latencyMs?: number; message: string }> {
+  try {
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, message: "Unauthorized to test webhook for this website." };
+    }
+
+    const trimmedUrl = webhookUrl.trim();
+    if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+      return { success: false, message: "Webhook URL must start with http:// or https://" };
+    }
+
+    const testPayload = {
+      event: "article.published" as const,
+      is_test_ping: true,
+      site_id: siteId,
+      site_name: "Test Site",
+      domain: "example.com",
+      article: {
+        title: "Test Verification Article: Autonomous Publishing Pipeline",
+        metaDescription: "Test ping verifying outbound webhook delivery pipeline and HMAC cryptographic signature.",
+        content: "<h2>Connection Verified</h2><p>Your CMS endpoint successfully received our test article payload.</p>",
+        suggestedTags: ["Integration", "Test"],
+        wordCount: 15,
+        readingTimeMinutes: 1,
+      },
+      telemetry: {
+        provider: "groq",
+        model: "llama-3.3-70b-versatile",
+        latency_ms: 1100,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    const payloadJson = JSON.stringify(testPayload);
+    const signature = computeWebhookSignature(payloadJson, process.env.SESSION_SECRET || siteId);
+
+    const start = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    try {
+      const response = await fetch(trimmedUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "AI-Blog-SaaS-Publisher/1.0",
+          "x-saas-event": "article.published",
+          "x-saas-test": "true",
+          "x-saas-signature": `sha256=${signature}`,
+        },
+        body: payloadJson,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const elapsed = Date.now() - start;
+
+      if (response.ok || (response.status >= 200 && response.status < 300)) {
+        return {
+          success: true,
+          statusCode: response.status,
+          latencyMs: elapsed,
+          message: `Endpoint verified! Received HTTP ${response.status} in ${elapsed}ms. HMAC-SHA256 signature accepted.`,
+        };
+      } else {
+        return {
+          success: false,
+          statusCode: response.status,
+          latencyMs: elapsed,
+          message: `Endpoint returned HTTP ${response.status} (${response.statusText || "Error"}) in ${elapsed}ms. Check your receiver route.`,
+        };
+      }
+    } catch (fetchErr: any) {
+      clearTimeout(timeoutId);
+      const elapsed = Date.now() - start;
+      if (fetchErr.name === "AbortError") {
+        return {
+          success: false,
+          latencyMs: elapsed,
+          message: `Delivery timed out after 6000ms. Ensure your endpoint responds quickly (< 5s).`,
+        };
+      }
+      return {
+        success: false,
+        latencyMs: elapsed,
+        message: `Network error reaching endpoint: ${fetchErr?.message || "Failed to fetch"}`,
+      };
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || "Unexpected failure while testing webhook endpoint.",
+    };
+  }
+}
+
 
 export interface DashboardGenerateResult {
   success: boolean;
