@@ -34,6 +34,7 @@ import {
   Database,
   Sliders,
   ChevronRight,
+  ChevronDown,
   Workflow,
   Search,
   BookOpen,
@@ -41,15 +42,47 @@ import {
   Users,
   Target,
   FileText,
+  DollarSign,
+  Calculator,
+  HelpCircle,
 } from "lucide-react";
 
 interface LandingPageProps {
   currentUserEmail?: string | null;
 }
 
+const FAQ_ITEMS = [
+  {
+    q: "Is AI-generated content penalized by Google?",
+    a: "No. Google's official search guidance is explicit: content quality and helpfulness matter, not how content is produced. Google rewards original, people-first content that answers user search intent, and penalizes thin or manipulative spam regardless of whether a human or AI wrote it. Our platform structures high-quality drafts adhering to Google E-E-A-T principles with authoritative headings and semantic metadata."
+  },
+  {
+    q: "How does the automated CMS webhook publishing work?",
+    a: "Whenever an article finishes generation, our platform can immediately dispatch the complete semantic HTML article directly to your endpoint via HTTP POST. It comes pre-formatted with titles, meta descriptions, image suggestions, and internal links ready for WordPress, Shopify, Webflow, Ghost, or your custom API, protected with cryptographic HMAC-SHA256 signatures."
+  },
+  {
+    q: "What is dual-LLM fallback and why is it important?",
+    a: "Third-party AI providers experience traffic spikes and occasional rate limits. AI Blog SaaS uses Groq as the ultra-fast primary engine and automatically fails over to Google Gemini Flash if Groq is degraded. Your scheduled and queued posts continue without drops or delays."
+  },
+  {
+    q: "Can I bring my own AI keys (BYO Keys)?",
+    a: "Yes! If you already have Groq or Google Gemini API accounts with free tier headroom or custom quotas, you can enter your keys securely in your client dashboard. The platform will route your generation through your private credentials while maintaining all brand voice and publishing automations."
+  },
+  {
+    q: "How does canonical internal link injection work?",
+    a: "You provide your key destination URLs (such as your services, pricing, or case study pages). When generating articles, our engine analyzes the context and naturally weaves 2–3 relevant contextual backlinks into the article body, directing organic readers toward your revenue pages and boosting site authority."
+  },
+  {
+    q: "Can I change plans or cancel at any time?",
+    a: "Absolutely. All plans are month-to-month with no contracts. You can upgrade, downgrade, or cancel anytime directly from your dashboard's Stripe billing portal with a single click."
+  }
+];
+
 export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
   const [userEmail, setUserEmail] = useState<string | null>(currentUserEmail || null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  const [calculatorArticles, setCalculatorArticles] = useState(50);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [copiedSnippet, setCopiedSnippet] = useState(false);
 
   React.useEffect(() => {
@@ -137,11 +170,14 @@ console.log("Published:", article.title, article.url);`;
             <a href="#features" className="hover:text-foreground transition-colors">
               Features
             </a>
-            <a href="#sample-preview" className="hover:text-foreground transition-colors">
-              Live Preview
+            <a href="#calculator" className="hover:text-foreground transition-colors">
+              ROI Calculator
             </a>
             <a href="#pricing" className="hover:text-foreground transition-colors">
-              Plans &amp; Pricing
+              Pricing
+            </a>
+            <a href="#faq" className="hover:text-foreground transition-colors">
+              FAQ
             </a>
           </nav>
 
@@ -677,6 +713,104 @@ console.log("Published:", article.title, article.url);`;
         </div>
       </section>
 
+      {/* Interactive ROI & Content Savings Calculator */}
+      <section id="calculator" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full border-t border-border/40">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
+            <Calculator className="h-3.5 w-3.5 mr-1.5 text-indigo-400" />
+            ROI &amp; MARGIN CALCULATOR
+          </Badge>
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+            Calculate Your Content Production Savings
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base mt-2">
+            See how much time and budget you reclaim compared to traditional copywriters and content agencies.
+          </p>
+        </div>
+
+        <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-2xl p-6 sm:p-10 relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Slider Control */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-foreground">
+                    Target Publishing Volume:
+                  </label>
+                  <span className="text-2xl font-extrabold text-primary font-mono">
+                    {calculatorArticles} <span className="text-xs font-normal text-muted-foreground">articles / month</span>
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={10}
+                  max={300}
+                  step={5}
+                  value={calculatorArticles}
+                  onChange={(e) => setCalculatorArticles(Number(e.target.value))}
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                />
+                <div className="flex justify-between text-[11px] text-muted-foreground font-mono">
+                  <span>10 posts (Solopreneur)</span>
+                  <span>100 posts (Growth Brand)</span>
+                  <span>300 posts (Digital Agency)</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-xl border border-border/60 bg-background/50 space-y-1">
+                  <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
+                    Traditional Agency / Freelance
+                  </span>
+                  <div className="text-2xl font-extrabold text-foreground font-mono">
+                    ${(calculatorArticles * 120).toLocaleString()}
+                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Based on standard rate of ~$120/article with proofreading
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl border border-indigo-500/40 bg-indigo-500/10 space-y-1">
+                  <span className="text-[11px] text-indigo-300 font-semibold uppercase tracking-wider">
+                    AI Blog SaaS Engine
+                  </span>
+                  <div className="text-2xl font-extrabold text-indigo-400 font-mono">
+                    ${(calculatorArticles <= 25 ? (billingCycle === "annual" ? 24 : 29) : calculatorArticles <= 100 ? (billingCycle === "annual" ? 64 : 79) : (billingCycle === "annual" ? 199 : 249)).toLocaleString()}
+                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Includes automated SEO, brand voice, and CMS webhooks
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Savings Callout Card */}
+            <div className="lg:col-span-5 rounded-2xl bg-gradient-to-br from-indigo-950/60 via-purple-950/40 to-background/80 border border-indigo-500/30 p-6 flex flex-col justify-between text-center sm:text-left space-y-4 shadow-xl">
+              <div>
+                <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[11px] mb-2 font-semibold">
+                  ESTIMATED SAVINGS
+                </Badge>
+                <div className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono tracking-tight">
+                  ${((calculatorArticles * 120) - (calculatorArticles <= 25 ? (billingCycle === "annual" ? 24 : 29) : calculatorArticles <= 100 ? (billingCycle === "annual" ? 64 : 79) : (billingCycle === "annual" ? 199 : 249))).toLocaleString()}
+                  <span className="text-xs text-muted-foreground font-normal ml-1">/ month saved</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  Plus an estimated <strong className="text-foreground font-semibold">{Math.round(calculatorArticles * 3.5)} hours</strong> of manual drafting and formatting returned to your team every month.
+                </p>
+              </div>
+
+              <Button asChild size="sm" className="w-full bg-primary text-primary-foreground font-semibold shadow-md">
+                <Link href={userEmail ? "/dashboard" : "/signup"}>
+                  Claim Your Savings Now &rarr;
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </section>
+
       {/* Pricing / Tiers Section */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-border/40">
         <div className="text-center max-w-3xl mx-auto mb-12">
@@ -702,7 +836,7 @@ console.log("Published:", article.title, article.url);`;
             />
             <span className={`text-xs font-medium flex items-center gap-1.5 ${billingCycle === "annual" ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
               Annual
-              <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 px-1.5 py-0">
+              <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 px-1.5 py-0 font-semibold">
                 SAVE 20%
               </Badge>
             </span>
@@ -725,7 +859,7 @@ console.log("Published:", article.title, article.url);`;
             <CardContent className="space-y-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span className="text-foreground font-medium">50 SEO Articles per month</span>
+                <span className="text-foreground font-semibold">25 SEO Articles per month</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -741,12 +875,12 @@ console.log("Published:", article.title, article.url);`;
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>99.99% Publishing Uptime</span>
+                <span>Dual-LLM (Groq + Gemini) Failover</span>
               </div>
             </CardContent>
             <CardFooter>
-              <Button asChild variant="outline" className="w-full text-xs">
-                <Link href={userEmail ? "/dashboard" : "/signup"}>
+              <Button asChild variant="outline" className="w-full text-xs font-semibold">
+                <Link href={userEmail ? "/dashboard" : "/signup?plan=starter"}>
                   {userEmail ? "Go to Dashboard" : "Start Free Trial"}
                 </Link>
               </Button>
@@ -757,13 +891,13 @@ console.log("Published:", article.title, article.url);`;
           <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
             <Card className="border-indigo-500/50 bg-card/80 backdrop-blur-xl relative shadow-xl shadow-indigo-500/10 flex flex-col justify-between h-full">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 text-[11px] px-3">
+                <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 text-[11px] px-3 font-semibold">
                   MOST POPULAR FOR GROWTH
                 </Badge>
               </div>
               <CardHeader className="pt-8">
                 <CardTitle className="text-xl">Growth Pro</CardTitle>
-                <CardDescription>For ambitious brands, e-commerce stores, and agencies.</CardDescription>
+                <CardDescription>For ambitious brands, e-commerce stores, and digital teams.</CardDescription>
                 <div className="mt-4">
                   <span className="text-4xl font-extrabold text-foreground">
                     ${billingCycle === "annual" ? "64" : "79"}
@@ -774,11 +908,11 @@ console.log("Published:", article.title, article.url);`;
               <CardContent className="space-y-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span className="text-foreground font-medium">300 SEO Articles per month</span>
+                  <span className="text-foreground font-semibold">100 SEO Articles per month</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span className="text-foreground font-medium">Up to 5 Connected Websites</span>
+                  <span className="text-foreground font-semibold">Up to 5 Connected Websites</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -790,12 +924,16 @@ console.log("Published:", article.title, article.url);`;
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <span>Outbound CMS Webhooks (WordPress/Shopify)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                   <span>Priority Generation Speed</span>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button asChild className="w-full text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
-                  <Link href={userEmail ? "/dashboard" : "/signup"}>
+                <Button asChild className="w-full text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">
+                  <Link href={userEmail ? "/dashboard" : "/signup?plan=pro"}>
                     {userEmail ? "Go to Dashboard" : "Start 14-Day Free Trial"}
                   </Link>
                 </Button>
@@ -807,7 +945,7 @@ console.log("Published:", article.title, article.url);`;
           <Card className="border-border/70 bg-card/40 backdrop-blur-xl flex flex-col justify-between">
             <CardHeader>
               <CardTitle className="text-xl">Agency Scale</CardTitle>
-              <CardDescription>For digital marketing agencies managing multiple clients.</CardDescription>
+              <CardDescription>For digital marketing agencies managing client portfolios.</CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-extrabold text-foreground">
                   ${billingCycle === "annual" ? "199" : "249"}
@@ -818,33 +956,85 @@ console.log("Published:", article.title, article.url);`;
             <CardContent className="space-y-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span className="text-foreground font-medium">Unlimited Monthly Articles</span>
+                <span className="text-foreground font-semibold">500 SEO Articles per month</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Unlimited Client Brand Profiles</span>
+                <span className="text-foreground font-semibold">Unlimited Connected Websites</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Dedicated Brand Onboarding Specialist</span>
+                <span>Dedicated Brand Profiles per Client</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>99.99% Uptime Service Level Agreement</span>
+                <span>Full Webhook &amp; REST API Access</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Custom Fine-Tuned Industry Models</span>
+                <span>BYO Custom API Keys Support</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                <span>99.99% Uptime SLA</span>
               </div>
             </CardContent>
             <CardFooter>
-              <Button asChild variant="outline" className="w-full text-xs">
-                <Link href={userEmail ? "/dashboard" : "/signup"}>
+              <Button asChild variant="outline" className="w-full text-xs font-semibold">
+                <Link href={userEmail ? "/dashboard" : "/signup?plan=agency"}>
                   {userEmail ? "Go to Dashboard" : "Get Started"}
                 </Link>
               </Button>
             </CardFooter>
           </Card>
+        </div>
+      </section>
+
+      {/* Frequently Asked Questions (FAQ) Section */}
+      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full border-t border-border/40">
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <Badge variant="outline" className="mb-3 font-mono text-xs px-3 py-1">
+            <HelpCircle className="h-3.5 w-3.5 mr-1.5 text-purple-400" />
+            FREQUENTLY ASKED QUESTIONS
+          </Badge>
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+            Everything You Need to Know
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base mt-2">
+            Clear, transparent answers on AI content quality, Google guidelines, CMS webhooks, and billing.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {FAQ_ITEMS.map((item, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <div
+                key={idx}
+                className="rounded-xl border border-border/70 bg-card/50 backdrop-blur-md overflow-hidden transition-all"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                  className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-muted/20 transition-colors"
+                >
+                  <span className="font-bold text-sm sm:text-base text-foreground leading-snug">
+                    {item.q}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200 ${
+                      isOpen ? "rotate-180 text-primary" : ""
+                    }`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="px-5 pb-5 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/40 pt-3">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -874,55 +1064,77 @@ console.log("Published:", article.title, article.url);`;
         </Card>
       </section>
 
-      {/* Modern SaaS Footer */}
-      <footer className="border-t border-border/40 bg-background/80 py-10 px-4 sm:px-6 lg:px-8 text-xs text-muted-foreground mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-md bg-indigo-500/20 flex items-center justify-center">
-              <Sparkles className="h-3 w-3 text-indigo-400" />
+      {/* Enterprise Multi-Column SaaS Footer */}
+      <footer className="border-t border-border/40 bg-background/80 py-16 px-4 sm:px-6 lg:px-8 text-xs text-muted-foreground mt-auto">
+        <div className="max-w-7xl mx-auto space-y-12">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+            {/* Brand Column */}
+            <div className="col-span-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5">
+                  <div className="h-full w-full rounded-[6px] bg-background flex items-center justify-center">
+                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                  </div>
+                </div>
+                <span className="font-bold text-foreground text-base tracking-tight">AI Blog SaaS</span>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+                Autonomous organic traffic engine for growing brands and digital agencies. Powered by dual-LLM resilience, Brand DNA tuning, and direct CMS webhook publishing.
+              </p>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>All Systems Operational (99.99%)</span>
+              </div>
             </div>
-            <span className="font-semibold text-foreground">AI Blog SaaS Platform</span>
-            <span>• Organic Traffic &amp; SEO Engine</span>
+
+            {/* Column 1: Product */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">Product</h4>
+              <ul className="space-y-2 text-xs">
+                <li><a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Core Features</a></li>
+                <li><a href="#calculator" className="hover:text-foreground transition-colors">ROI Calculator</a></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors">Plans &amp; Pricing</a></li>
+                <li><Link href="/preview" className="hover:text-foreground transition-colors">Interactive Studio</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 2: Integrations */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">Integrations</h4>
+              <ul className="space-y-2 text-xs">
+                <li><span className="text-muted-foreground">WordPress Plugin</span></li>
+                <li><span className="text-muted-foreground">Shopify Blog API</span></li>
+                <li><span className="text-muted-foreground">Webflow Webhook</span></li>
+                <li><span className="text-muted-foreground">Zapier &amp; Make Hooks</span></li>
+                <li><span className="text-muted-foreground">Lightweight Node SDK</span></li>
+              </ul>
+            </div>
+
+            {/* Column 3: Legal & Account */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">Legal &amp; Access</h4>
+              <ul className="space-y-2 text-xs">
+                <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/login" className="hover:text-foreground transition-colors">Client Login</Link></li>
+                <li><Link href="/signup" className="hover:text-foreground transition-colors">Create Free Account</Link></li>
+                <li><Link href="/admin/login" className="hover:text-foreground transition-colors text-muted-foreground/60">Admin Portal</Link></li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            {userEmail ? (
-              <>
-                <Link href="/dashboard" className="hover:text-foreground transition-colors font-medium">
-                  Client Dashboard
-                </Link>
-                <Link href="/preview" className="hover:text-foreground transition-colors">
-                  Sample Studio
-                </Link>
-                <Link href="/auth/signout" className="hover:text-foreground transition-colors">
-                  Sign Out
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/signup" className="hover:text-foreground transition-colors">
-                  Get Started
-                </Link>
-                <Link href="/login" className="hover:text-foreground transition-colors">
-                  Sign In
-                </Link>
-                <Link href="/preview" className="hover:text-foreground transition-colors">
-                  Sample Studio
-                </Link>
-              </>
-            )}
-          </div>
+          <Separator className="bg-border/40" />
 
-          <div className="flex items-center gap-4 text-xs">
-            <Link href="/terms" className="hover:text-foreground transition-colors">
-              Terms
-            </Link>
-            <span>•</span>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">
-              Privacy
-            </Link>
-            <span>•</span>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
             <span>&copy; {new Date().getFullYear()} GrowthService Inc. All rights reserved.</span>
+            <div className="flex items-center gap-4">
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+              <span>•</span>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+              <span>•</span>
+              <span>Built with Dual-LLM Resilience</span>
+            </div>
           </div>
         </div>
       </footer>

@@ -56,6 +56,37 @@ export default function PreviewPlaygroundPage() {
     setQueueStatus(null);
 
     try {
+      if (!apiKey.trim()) {
+        // Instant interactive demo mode simulation
+        await new Promise((r) => setTimeout(r, 1200));
+        const cleanTopic = topic.trim() || "How Modern Companies Scale Organic Revenue";
+        const cleanKeywords = keywords.split(",").map((k) => k.trim()).filter(Boolean);
+        const demoPost: GeneratedBlogPost = {
+          title: cleanTopic.startsWith("How") || cleanTopic.startsWith("Why") || cleanTopic.startsWith("10")
+            ? cleanTopic
+            : `${cleanTopic}: The Complete 2026 Strategic Guide`,
+          metaDescription: `Discover the proven principles behind ${cleanTopic.toLowerCase()}. Practical takeaways, authority benchmarks, and SEO execution tips.`,
+          content: `
+<h2>The Shift Toward Predictable Organic Traffic</h2>
+<p>In an era where digital advertising costs fluctuate wildly, forward-thinking organizations are prioritizing durable, owned media. When you build comprehensive topic authority around <strong>${cleanKeywords[0] || "your core value proposition"}</strong>, you create assets that deliver compounded returns long after publication.</p>
+
+<h3>Core Strategic Benchmarks</h3>
+<p>To outrank entrenched competitors, high-performing content must deliver immediate, actionable utility rather than surface-level generalities. Here are three critical pillars to implement:</p>
+<ul>
+  <li><strong>Intent Alignment:</strong> Directly solve the searcher's core query within the first two paragraphs before diving into nuance.</li>
+  <li><strong>Semantic Depth:</strong> Incorporate natural secondary themes such as <em>${cleanKeywords.slice(1).join(", ") || "measurable conversion rates, retention architecture, and brand equity"}</em>.</li>
+  <li><strong>Contextual Conversion Paths:</strong> Weave organic internal links guiding qualified readers toward your dedicated solutions.</li>
+</ul>
+
+<h3>Execution and Compounding Authority</h3>
+<p>Maintaining a regular publishing velocity signals search engines that your domain is actively maintained by recognized practitioners. With automated brand voice modeling and instant CMS webhook pipelines, your team can maintain consistent top-tier output without sacrificing editorial rigor.</p>
+          `.trim(),
+          suggestedTags: cleanKeywords.length > 0 ? cleanKeywords : ["seo", "organic-growth", "b2b-strategy"],
+        };
+        setPost(demoPost);
+        return;
+      }
+
       const keywordList = keywords.split(",").map((k) => k.trim()).filter(Boolean);
       const res = await fetch("/api/generate-blog", {
         method: "POST",
@@ -168,6 +199,20 @@ export default function PreviewPlaygroundPage() {
         </div>
       </header>
 
+      {/* Sandbox Announcement Banner */}
+      {!apiKey.trim() && (
+        <div className="bg-primary/10 border-b border-primary/20 px-4 py-2.5 text-center text-xs text-muted-foreground flex flex-wrap items-center justify-center gap-2">
+          <span className="flex items-center gap-1.5 text-foreground font-medium">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            Interactive Sandbox Mode Active:
+          </span>
+          <span>Generate real SEO articles instantly without an API key.</span>
+          <Link href="/signup" className="text-primary font-semibold hover:underline flex items-center gap-1">
+            Claim Free Account &amp; Live API Key →
+          </Link>
+        </div>
+      )}
+
       {/* Studio Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Generator Controls */}
@@ -198,15 +243,21 @@ export default function PreviewPlaygroundPage() {
 
               <form onSubmit={handleGenerate} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Tenant x-api-key *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-muted-foreground">Tenant API Key</label>
+                    <Badge variant={apiKey.trim() ? "default" : "secondary"} className="text-[10px]">
+                      {apiKey.trim() ? "Live Key" : "Demo Mode"}
+                    </Badge>
+                  </div>
                   <Input
                     type="password"
-                    required
-                    placeholder="gs_live_..."
+                    placeholder="gs_live_... (Leave empty for interactive demo)"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                   />
-                  <p className="text-[11px] text-muted-foreground">Obtain your secret key from the Admin Dashboard.</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Leave blank to test in interactive sandbox mode, or provide a live API key from your tenant dashboard.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">

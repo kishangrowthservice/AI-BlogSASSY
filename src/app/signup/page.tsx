@@ -26,12 +26,18 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   // Verification Sent State
   const [isVerificationSent, setIsVerificationSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const plan = new URLSearchParams(window.location.search).get("plan");
+      if (plan) setSelectedPlan(plan.toLowerCase());
+    }
+
     async function checkSession() {
       try {
         const supabase = createClient();
@@ -212,9 +218,23 @@ export default function SignupPage() {
             /* SIGNUP FORM */
             <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-xl">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold tracking-tight">Create Your Account</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl font-bold tracking-tight">Create Your Account</CardTitle>
+                  {selectedPlan && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 border border-primary/30 text-primary capitalize">
+                      <Sparkles className="h-3 w-3" />
+                      {selectedPlan === "pro"
+                        ? "Growth Pro ($79/mo)"
+                        : selectedPlan === "agency"
+                        ? "Agency Scale ($249/mo)"
+                        : "Starter ($29/mo)"}
+                    </span>
+                  )}
+                </div>
                 <CardDescription className="text-xs">
-                  Start your free trial. We&apos;ll verify your email before setting up your website.
+                  {selectedPlan
+                    ? "Start your 14-day free trial on your selected tier. No charge until trial completes."
+                    : "Start your free trial. We'll verify your email before setting up your website."}
                 </CardDescription>
               </CardHeader>
 
@@ -245,7 +265,7 @@ export default function SignupPage() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                       <Lock className="h-3.5 w-3.5 text-indigo-400" />
-                      Password (min 6 characters)
+                      Password (min 8 characters)
                     </label>
                     <Input
                       type="password"
