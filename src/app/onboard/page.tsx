@@ -45,16 +45,19 @@ export default function OnboardPage() {
           setUserEmail(user.email || null);
           setUserId(user.id);
 
-          // If user already has an onboarded website, send to their dashboard
-          const { data: existingSite } = await supabase
-            .from("site_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .limit(1)
-            .maybeSingle();
+          // If user already has an onboarded website, send to their dashboard unless explicitly adding a new site (?new=true)
+          const isExplicitNew = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new") === "true";
+          if (!isExplicitNew) {
+            const { data: existingSite } = await supabase
+              .from("site_profiles")
+              .select("id")
+              .eq("user_id", user.id)
+              .limit(1)
+              .maybeSingle();
 
-          if (existingSite?.id) {
-            router.replace(`/dashboard?siteId=${existingSite.id}`);
+            if (existingSite?.id) {
+              router.replace(`/dashboard?siteId=${existingSite.id}`);
+            }
           }
         }
       } catch {
@@ -137,6 +140,9 @@ export default function OnboardPage() {
                 <CheckCircle2 className="h-3 w-3" />
                 Verified: {userEmail}
               </span>
+              <Button asChild variant="outline" size="sm" className="text-xs h-7">
+                <Link href="/dashboard">My Dashboard</Link>
+              </Button>
               <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground h-7">
                 <Link href="/auth/signout">Sign Out</Link>
               </Button>

@@ -559,3 +559,96 @@ export async function getUserPrimarySiteId(): Promise<string | null> {
   }
 }
 
+export interface UserSiteSummary {
+  id: string;
+  site_name: string;
+  domain: string;
+  is_active: boolean;
+  monthly_quota: number;
+  used_quota: number;
+  plan_tier?: string;
+  created_at: string;
+}
+
+/**
+ * Returns all website profiles owned by the currently authenticated user.
+ * Enables multi-site portfolio switching and management.
+ */
+export async function getUserSitesAction(): Promise<UserSiteSummary[]> {
+  try {
+    const serverAuth = await createSupabaseServerClient();
+    const { data: { user } } = await serverAuth.auth.getUser();
+    if (!user) return [];
+
+    try {
+      const db = getDbClient();
+      const { data, error } = await db
+        .from("site_profiles")
+        .select("id, site_name, domain, is_active, monthly_quota, used_quota, plan_tier, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data as UserSiteSummary[];
+      }
+    } catch {
+      // Local fallback
+    }
+
+    const matched: UserSiteSummary[] = [];
+    for (const [id, prof] of localSiteProfiles.entries()) {
+      if (prof.user_id === user.id) {
+        matched.push({
+          id,
+          site_name: prof.site_name,
+          domain: prof.domain,
+          is_active: prof.is_active,
+          monthly_quota: prof.monthly_quota,
+          used_quota: prof.used_quota,
+          plan_tier: prof.plan_tier || "starter",
+          created_at: prof.created_at,
+        });
+      }
+    }
+    return matched;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Allows tenant to configure their outbound CMS webhook URL.
+ */
+export async function updateTenantWebhookAction(
+  siteId: string,
+  webhookUrl: string | null
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized to update webhook settings for this website." };
+    }
+
+    const cleanedUrl = webhookUrl?.trim() ? webhookUrl.trim() : null;
+
+    try {
+      const supabase = getDbClient();
+      await supabase
+        .from("site_profiles")
+        .update({ webhook_url: cleanedUrl })
+        .eq("id", siteId);
+    } catch {
+      // Local fallback
+    }
+
+    const local = localSiteProfiles.get(siteId);
+    if (local) {
+      local.webhook_url = cleanedUrl;
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to update webhook URL" };
+  }
+}
+

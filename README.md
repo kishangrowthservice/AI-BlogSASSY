@@ -62,10 +62,11 @@ Navigate to [http://localhost:3000](http://localhost:3000) to view the applicati
 - `012_atomic_quota_reservation.sql`: Adds atomic `reserve_tenant_quota` and `release_tenant_quota` PL/pgSQL functions to close quota overshooting race conditions under concurrent bursts.
 - `013_add_title_to_generation_logs.sql`: Adds `title` text column to `generation_logs` for human-readable article history in tenant dashboards.
 - `014_comprehensive_rls_policies.sql`: Extends RLS with strict `UPDATE` and `INSERT` policies on `site_profiles` and tenant-scoped `SELECT` policy on `generation_logs`.
+- `015_billing_and_multi_site.sql`: Adds Stripe customer/subscription tracking, plan tiers (`starter`, `pro`, `agency`), and outbound CMS webhook URLs to `site_profiles`.
 
 ## Known Limitations
 
 The following items are outstanding for full production commercial readiness:
-- **Test Framework**: No formal automated test runner (such as Jest, Vitest, or Playwright) is configured in `package.json`; testing currently relies on standalone verification scripts (`scripts/verify_*.ts`).
-- **Billing Integration**: No payment processor integration (such as Stripe or LemonSqueezy) exists yet; tenant `monthly_quota` values are statically assigned upon onboarding (25 for self-serve starter, 100 for admin-onboarded) without self-serve upgrade paths.
+- **Test Framework**: No formal automated test runner (such as Jest, Vitest, or Playwright) is configured in `package.json`; testing relies on standalone verification scripts (`npm test` runs `verify:auth` and `verify:saas`).
+- **Live Stripe Keys**: Billing infrastructure (`/api/billing/checkout`, `/api/billing/portal`, `/api/webhooks/stripe`) is fully implemented with test simulation fallback; connecting live credit card billing requires adding live Stripe API keys (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) in production.
 - **Legal Agreements**: `/terms` and `/privacy` are clearly-labeled draft placeholder documents pending formal review by qualified legal and privacy counsel before commercial transactions occur.

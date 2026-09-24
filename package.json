@@ -9,8 +9,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "verify:auth": "tsx scripts/verify_authorization.ts",
+    "verify:saas": "tsx scripts/verify_saas_features.ts",
     "test:auth": "tsx scripts/test-authorization.ts",
-    "test": "npm run typecheck && npm run verify:auth"
+    "test": "npm run typecheck && npm run verify:auth && npm run verify:saas"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",
@@ -37,6 +38,7 @@
     "postcss": "^8.5.28",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "stripe": "^22.6.2",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^3.4.19",
     "zod": "^3.24.2"

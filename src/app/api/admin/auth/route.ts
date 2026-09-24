@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import crypto from "crypto";
 import { getDbClient } from "@/lib/db";
 
 export const runtime = "nodejs";
@@ -103,7 +104,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Password required" }, { status: 400 });
     }
 
-    if (password !== ADMIN_PASSWORD) {
+    const inputHash = crypto.createHash("sha256").update(password).digest();
+    const adminHash = crypto.createHash("sha256").update(ADMIN_PASSWORD).digest();
+    const isPasswordValid = crypto.timingSafeEqual(inputHash, adminHash);
+
+    if (!isPasswordValid) {
       await recordLoginFailure(ip);
       return NextResponse.json({ error: "Invalid admin password" }, { status: 401 });
     }

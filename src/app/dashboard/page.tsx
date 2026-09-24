@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getTenantDashboardData, getUserPrimarySiteId, verifySiteOwnership } from "@/lib/serverActions";
+import {
+  getTenantDashboardData,
+  getUserPrimarySiteId,
+  verifySiteOwnership,
+  getUserSitesAction,
+} from "@/lib/serverActions";
 import { toSafeSiteProfile } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/server";
 import { TenantDashboardClient } from "./TenantDashboardClient";
@@ -52,7 +57,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   // 4. Fetch dashboard data for the verified site
-  const result = await getTenantDashboardData(activeSiteId);
+  const [result, userSites] = await Promise.all([
+    getTenantDashboardData(activeSiteId),
+    getUserSitesAction(),
+  ]);
 
   if (!result.success || !result.profile) {
     redirect("/onboard");
@@ -64,6 +72,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       initialKeyPrefix={result.keyPrefix || null}
       initialLogs={result.recentLogs || []}
       currentUserEmail={currentUserEmail}
+      initialUserSites={userSites || []}
     />
   );
 }

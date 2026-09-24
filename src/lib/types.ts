@@ -22,6 +22,10 @@ export interface SiteProfile {
   byo_groq_api_key?: string;
   byo_gemini_api_key?: string;
   user_id?: string | null;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  plan_tier?: "starter" | "pro" | "agency" | string;
+  webhook_url?: string | null;
   created_at: string;
   updated_at: string;
 }

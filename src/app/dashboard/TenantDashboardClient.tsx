@@ -19,12 +19,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
   generateTenantApiKeyAction,
   updateTenantByoKeys,
   updateTenantBrandAction,
+  updateTenantWebhookAction,
+  type UserSiteSummary,
 } from "@/lib/serverActions";
+import { PLAN_TIERS, getPlanTier } from "@/lib/billing";
 import type { SafeSiteProfile } from "@/lib/sanitize";
-import type { GenerationLog } from "@/lib/types";
+import type { GenerationLog, InternalLinkItem } from "@/lib/types";
 import {
   Key,
   Sparkles,
@@ -47,6 +58,12 @@ import {
   BookOpen,
   HelpCircle,
   LogOut,
+  ChevronDown,
+  Plus,
+  Trash2,
+  ExternalLink,
+  CreditCard,
+  Zap,
 } from "lucide-react";
 
 interface TenantDashboardProps {
@@ -54,6 +71,7 @@ interface TenantDashboardProps {
   initialKeyPrefix: string | null;
   initialLogs: GenerationLog[];
   currentUserEmail?: string | null;
+  initialUserSites?: UserSiteSummary[];
 }
 
 export function TenantDashboardClient({
@@ -61,17 +79,31 @@ export function TenantDashboardClient({
   initialKeyPrefix,
   initialLogs,
   currentUserEmail,
+  initialUserSites = [],
 }: TenantDashboardProps) {
   const [profile, setProfile] = useState<SafeSiteProfile>(initialProfile);
+  const [userSites, setUserSites] = useState<UserSiteSummary[]>(initialUserSites);
   const [keyPrefix, setKeyPrefix] = useState<string | null>(initialKeyPrefix);
   const [logs, setLogs] = useState<GenerationLog[]>(initialLogs);
   const [apiOrigin, setApiOrigin] = useState("https://api.growthservice.in");
+
+  // Upgrade Success Notification
+  const [upgradeBanner, setUpgradeBanner] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (process.env.NEXT_PUBLIC_API_URL) {
       setApiOrigin(process.env.NEXT_PUBLIC_API_URL);
     } else if (typeof window !== "undefined" && window.location.origin) {
       setApiOrigin(window.location.origin);
+    }
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("upgrade") === "success") {
+        const plan = params.get("plan") || "pro";
+        setUpgradeBanner(`Your subscription has been successfully upgraded to the ${plan.toUpperCase()} tier! New article quotas are active.`);
+        setTimeout(() => setUpgradeBanner(null), 8000);
+      }
     }
   }, []);
 
@@ -81,7 +113,11 @@ export function TenantDashboardClient({
   const [revealedRawKey, setRevealedRawKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  // BYO Key State (never pre-filled with plaintext credentials from server)
+  // Upgrade Plan Modal State
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+
+  // BYO Key State
   const [byoGroq, setByoGroq] = useState("");
   const [byoGemini, setByoGemini] = useState("");
   const [isSavingByo, setIsSavingByo] = useState(false);
@@ -92,9 +128,23 @@ export function TenantDashboardClient({
   const [brandKnowledge, setBrandKnowledge] = useState(initialProfile.brand_knowledge || "");
   const [tone, setTone] = useState(initialProfile.tone || "");
   const [targetAudience, setTargetAudience] = useState(initialProfile.target_audience || "");
+  const [internalLinks, setInternalLinks] = useState<InternalLinkItem[]>(initialProfile.internal_links || []);
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [newLinkLabel, setNewLinkLabel] = useState("");
+  const [newLinkCategory, setNewLinkCategory] = useState("General");
   const [isSavingBrand, setIsSavingBrand] = useState(false);
   const [brandSuccess, setBrandSuccess] = useState(false);
   const [brandError, setBrandError] = useState<string | null>(null);
+
+  // Outbound CMS Webhook State
+  const [webhookUrl, setWebhookUrl] = useState(initialProfile.webhook_url || "");
+  const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+  const [webhookSuccess, setWebhookSuccess] = useState(false);
+  const [webhookError, setWebhookError] = useState<string | null>(null);
+
+  // Article History Modal State
+  const [inspectedLog, setInspectedLog] = useState<GenerationLog | null>(null);
+  const [copiedLogTitle, setCopiedLogTitle] = useState(false);
 
   // Code Snippets Copy State
   const [copiedCurl, setCopiedCurl] = useState(false);
@@ -146,6 +196,22 @@ export function TenantDashboardClient({
     }
   };
 
+  // Add Internal Link Item
+  const handleAddInternalLink = () => {
+    if (!newLinkUrl.trim() || !newLinkLabel.trim()) return;
+    const cleanUrl = newLinkUrl.trim();
+    const cleanLabel = newLinkLabel.trim();
+    const cleanCategory = newLinkCategory.trim() || "General";
+
+    setInternalLinks((prev) => [...prev, { url: cleanUrl, label: cleanLabel, category: cleanCategory }]);
+    setNewLinkUrl("");
+    setNewLinkLabel("");
+  };
+
+  const handleDeleteInternalLink = (index: number) => {
+    setInternalLinks((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const handleSaveBrand = async () => {
     setIsSavingBrand(true);
     setBrandSuccess(false);
@@ -155,9 +221,10 @@ export function TenantDashboardClient({
         brand_knowledge: brandKnowledge,
         tone: tone,
         target_audience: targetAudience,
-        internal_links: profile.internal_links,
+        internal_links: internalLinks,
       });
       if (res.success) {
+        setProfile((prev) => ({ ...prev, internal_links: internalLinks }));
         setBrandSuccess(true);
         setTimeout(() => setBrandSuccess(false), 3000);
       } else {
@@ -172,6 +239,50 @@ export function TenantDashboardClient({
     }
   };
 
+  const handleSaveWebhook = async () => {
+    setIsSavingWebhook(true);
+    setWebhookSuccess(false);
+    setWebhookError(null);
+    try {
+      const res = await updateTenantWebhookAction(profile.id, webhookUrl);
+      if (res.success) {
+        setProfile((prev) => ({ ...prev, webhook_url: webhookUrl.trim() || null }));
+        setWebhookSuccess(true);
+        setTimeout(() => setWebhookSuccess(false), 3000);
+      } else {
+        setWebhookError(res.error || "Failed to update webhook URL.");
+        setTimeout(() => setWebhookError(null), 4000);
+      }
+    } catch (err: any) {
+      setWebhookError(err?.message || "Failed to update webhook URL.");
+      setTimeout(() => setWebhookError(null), 4000);
+    } finally {
+      setIsSavingWebhook(false);
+    }
+  };
+
+  const handleUpgradePlan = async (planId: string) => {
+    setUpgradingPlan(planId);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId: profile.id, planId }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "Failed to initiate plan upgrade.");
+      }
+    } catch (err) {
+      console.error("Upgrade error:", err);
+      alert("Error starting checkout session.");
+    } finally {
+      setUpgradingPlan(null);
+    }
+  };
+
   const activeKeySample = keyPrefix || "gs_live_YOUR_SECRET_KEY";
 
   const curlExample = `curl -X POST ${apiOrigin}/api/generate-blog \\
@@ -183,7 +294,7 @@ export function TenantDashboardClient({
     "wordCount": 1000
   }'`;
 
-  const sdkExample = `import { BlogClient } from "@growthservice/blog-client"; // Coming soon
+  const sdkExample = `import { BlogClient } from "@growthservice/blog-client";
 
 const client = new BlogClient({
   apiKey: "${activeKeySample}",
@@ -199,6 +310,7 @@ const post = await client.generateBlog({
 console.log("Ready:", post.title);`;
 
   const quotaPercent = Math.min(100, Math.round(((profile.used_quota || 0) / (profile.monthly_quota || 1)) * 100));
+  const currentPlan = getPlanTier(profile.plan_tier);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20">
@@ -212,17 +324,67 @@ console.log("Ready:", post.title);`;
                   <Sparkles className="h-4 w-4 text-indigo-400" />
                 </div>
               </div>
-              <span className="font-bold tracking-tight text-base">AI Blog SaaS</span>
+              <span className="font-bold tracking-tight text-base hidden sm:inline">AI Blog SaaS</span>
             </Link>
 
-            <Separator orientation="vertical" className="h-4 bg-border/60 mx-1" />
+            <Separator orientation="vertical" className="h-4 bg-border/60 mx-1 hidden sm:block" />
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">{profile.site_name}</span>
-              <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
-                {profile.domain}
-              </Badge>
-            </div>
+            {/* MULTI-SITE SWITCHER DROPDOWN */}
+            {userSites && userSites.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border/60 hover:bg-muted/40 transition-colors text-left bg-background/50">
+                    <Globe className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                    <div className="truncate max-w-[130px] sm:max-w-[200px]">
+                      <div className="text-xs font-semibold text-foreground truncate flex items-center gap-1">
+                        {profile.site_name}
+                        <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                      </div>
+                      <div className="font-mono text-[10px] text-muted-foreground truncate">{profile.domain}</div>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 bg-card/95 backdrop-blur-xl border-border/80">
+                  <DropdownMenuLabel className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                    Your Websites ({userSites.length})
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {userSites.map((s) => (
+                    <DropdownMenuItem key={s.id} asChild className="cursor-pointer">
+                      <Link
+                        href={`/dashboard?siteId=${s.id}`}
+                        className={`flex items-center justify-between text-xs py-2 ${
+                          s.id === profile.id ? "font-bold text-primary bg-primary/10" : "text-foreground"
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="truncate">{s.site_name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono truncate">{s.domain}</div>
+                        </div>
+                        {s.id === profile.id && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link
+                      href="/onboard?new=true"
+                      className="flex items-center gap-2 text-xs text-indigo-400 py-1.5 font-medium"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add New Website
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">{profile.site_name}</span>
+                <Badge variant="outline" className="font-mono text-[10px] text-muted-foreground">
+                  {profile.domain}
+                </Badge>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -234,7 +396,7 @@ console.log("Ready:", post.title);`;
 
             <Badge variant="outline" className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald-400 border-emerald-500/30">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              Site Active
+              {currentPlan.name}
             </Badge>
 
             <Button asChild variant="outline" size="sm" className="text-xs">
@@ -256,6 +418,19 @@ console.log("Ready:", post.title);`;
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Success Upgrade Banner */}
+        {upgradeBanner && (
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-300 flex items-center justify-between text-xs animate-in fade-in duration-300 shadow-lg">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span className="font-medium">{upgradeBanner}</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setUpgradeBanner(null)} className="h-7 text-xs text-emerald-300">
+              Dismiss
+            </Button>
+          </div>
+        )}
+
         {/* Header Title & Summary */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -263,13 +438,23 @@ console.log("Ready:", post.title);`;
               Client Content Dashboard
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage your website connection key, brand voice, monthly articles, and publishing settings.
+              Manage website keys, brand DNA, SEO internal links, and automated publishing.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-mono">
-              Account ID: {profile.id.slice(0, 8)}...
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowUpgradeModal(true)}
+              className="text-xs gap-1.5 border-primary/40 hover:border-primary text-primary"
+            >
+              <Zap className="h-3.5 w-3.5 text-amber-400" />
+              Upgrade Plan
+            </Button>
+
+            <span className="text-xs text-muted-foreground font-mono hidden sm:inline">
+              Site ID: {profile.id.slice(0, 8)}...
             </span>
           </div>
         </div>
@@ -317,7 +502,7 @@ console.log("Ready:", post.title);`;
                   </div>
 
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Your key is securely encrypted. To rotate or generate a new secret credential, click regenerate below (will replace previous connection).
+                    Your key is securely hashed. To rotate or generate a new secret credential, click regenerate below (replaces previous key).
                   </p>
                 </div>
               ) : (
@@ -378,8 +563,8 @@ console.log("Ready:", post.title);`;
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="outline" className="text-[10px]">
-                  Starter Plan
+                <Badge variant="outline" className="text-[10px] text-primary border-primary/40">
+                  {currentPlan.name}
                 </Badge>
               </div>
             </CardHeader>
@@ -402,8 +587,16 @@ console.log("Ready:", post.title);`;
               </div>
             </CardContent>
 
-            <CardFooter className="border-t border-border/40 pt-4 text-[11px] text-muted-foreground">
-              Need higher monthly volume? Upgrade your plan or connect custom accounts anytime.
+            <CardFooter className="border-t border-border/40 pt-4 flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">Need higher monthly volume?</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowUpgradeModal(true)}
+                className="text-xs text-primary font-semibold hover:text-primary/80 h-7 px-2"
+              >
+                Upgrade Plan &rarr;
+              </Button>
             </CardFooter>
           </Card>
         </div>
@@ -414,7 +607,7 @@ console.log("Ready:", post.title);`;
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Share2 className="h-4 w-4 text-indigo-400" />
-                <CardTitle className="text-base font-bold">Publish to Your Website</CardTitle>
+                <CardTitle className="text-base font-bold">Publish to Your Website &amp; CMS</CardTitle>
               </div>
               <Badge variant="outline" className="text-[11px]">
                 Direct Webhook &amp; API Ready
@@ -425,7 +618,52 @@ console.log("Ready:", post.title);`;
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="pt-2">
+          <CardContent className="pt-2 space-y-4">
+            {/* Outbound Webhook Section */}
+            <div className="rounded-lg border border-border/60 bg-background/50 p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-indigo-400" />
+                    Automated CMS Outbound Webhook (Optional)
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    Whenever an article completes generation, we can instantly POST the full HTML payload to your endpoint.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="https://yourwebsite.com/api/webhooks/incoming-article"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="bg-background/80 text-xs font-mono"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSaveWebhook}
+                  disabled={isSavingWebhook}
+                  className="text-xs font-semibold shrink-0"
+                >
+                  {isSavingWebhook ? "Saving..." : "Save Webhook"}
+                </Button>
+              </div>
+
+              {webhookSuccess && (
+                <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-2 text-xs text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Webhook URL updated successfully.
+                </div>
+              )}
+              {webhookError && (
+                <div className="rounded-md bg-red-500/10 border border-red-500/20 p-2 text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {webhookError}
+                </div>
+              )}
+            </div>
+
             <Tabs defaultValue="guide" className="w-full">
               <TabsList className="bg-muted/40 p-1 mb-3">
                 <TabsTrigger value="guide" className="text-xs gap-1.5">
@@ -503,7 +741,7 @@ console.log("Ready:", post.title);`;
 
         {/* Configuration: Brand Voice & Custom Accounts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* BRAND DNA CARD */}
+          {/* BRAND DNA & INTERNAL LINKS CARD */}
           <Card className="border-border/80 bg-card/60 backdrop-blur-xl shadow-lg">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
@@ -511,15 +749,15 @@ console.log("Ready:", post.title);`;
                   <Sliders className="h-4 w-4 text-pink-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-base font-bold">Brand Voice &amp; Messaging</CardTitle>
+                  <CardTitle className="text-base font-bold">Brand Voice &amp; SEO Internal Links</CardTitle>
                   <CardDescription className="text-xs">
-                    Fine-tune the vocabulary and unique expertise woven into your published articles.
+                    Fine-tune vocabulary and manage canonical internal links injected into articles.
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-3 pt-2">
+            <CardContent className="space-y-4 pt-2">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-foreground">Business Overview &amp; Solutions</label>
                 <Textarea
@@ -549,10 +787,91 @@ console.log("Ready:", post.title);`;
                 </div>
               </div>
 
+              {/* INTERACTIVE SEO INTERNAL LINKS MANAGER */}
+              <div className="space-y-2 pt-2 border-t border-border/40">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-indigo-400" />
+                    Canonical Internal Backlinks ({internalLinks.length})
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">Injected automatically into relevant 2-3 sections</span>
+                </div>
+
+                {/* Existing links list */}
+                {internalLinks && internalLinks.length > 0 ? (
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {internalLinks.map((link, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 rounded-md border border-border/60 bg-background/50 text-xs"
+                      >
+                        <div className="truncate pr-2">
+                          <span className="font-semibold text-foreground">{link.label}</span>
+                          <span className="text-muted-foreground font-mono text-[10px] ml-2 truncate">
+                            {link.url}
+                          </span>
+                          {link.category && (
+                            <Badge variant="outline" className="text-[9px] ml-2 py-0">
+                              {link.category}
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteInternalLink(idx)}
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-400 shrink-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 text-center text-[11px] text-muted-foreground border border-dashed border-border/60 rounded-md">
+                    No internal links configured yet. Add your product, service, or pricing URLs below.
+                  </div>
+                )}
+
+                {/* Add new link row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                  <Input
+                    placeholder="Anchor Text (e.g. Dental Implants)"
+                    value={newLinkLabel}
+                    onChange={(e) => setNewLinkLabel(e.target.value)}
+                    className="bg-background/80 text-xs"
+                  />
+                  <Input
+                    placeholder="URL (e.g. /services/implants)"
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    className="bg-background/80 text-xs"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      placeholder="Category"
+                      value={newLinkCategory}
+                      onChange={(e) => setNewLinkCategory(e.target.value)}
+                      className="bg-background/80 text-xs"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleAddInternalLink}
+                      className="h-9 px-2.5 text-xs shrink-0"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               {brandSuccess && (
                 <div className="rounded-md bg-emerald-500/10 border border-emerald-500/20 p-2 text-xs text-emerald-400 flex items-center gap-1.5">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Brand settings updated successfully.
+                  Brand settings and internal links updated successfully.
                 </div>
               )}
 
@@ -584,9 +903,9 @@ console.log("Ready:", post.title);`;
                   <Database className="h-4 w-4 text-purple-400" />
                 </div>
                 <div>
-                  <CardTitle className="text-base font-bold">Custom AI Accounts (Optional)</CardTitle>
+                  <CardTitle className="text-base font-bold">Custom AI Accounts (BYO Keys)</CardTitle>
                   <CardDescription className="text-xs">
-                    Connect your own Groq or Gemini AI keys for unlimited volume beyond plan limits.
+                    Connect your own Groq or Gemini AI keys for volume beyond included monthly limits.
                   </CardDescription>
                 </div>
               </div>
@@ -648,18 +967,22 @@ console.log("Ready:", post.title);`;
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-bold">Recent Published Articles</CardTitle>
             <CardDescription className="text-xs">
-              History of all articles generated and delivered for this website.
+              History of all articles generated and delivered for this website. Click any row to view telemetry details.
             </CardDescription>
           </CardHeader>
 
           <CardContent>
             {logs && logs.length > 0 ? (
               <div className="divide-y divide-border/40 text-xs">
-                {logs.slice(0, 5).map((log, idx) => (
-                  <div key={log.id || idx} className="py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                {logs.slice(0, 8).map((log, idx) => (
+                  <div
+                    key={log.id || idx}
+                    onClick={() => setInspectedLog(log)}
+                    className="py-3 flex items-center justify-between hover:bg-muted/30 px-2 rounded-md transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 truncate pr-4">
                       <span
-                        className={`h-2 w-2 rounded-full ${
+                        className={`h-2 w-2 rounded-full shrink-0 ${
                           log.status === "success" ? "bg-emerald-400" : "bg-red-400"
                         }`}
                       />
@@ -668,10 +991,10 @@ console.log("Ready:", post.title);`;
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-muted-foreground text-[11px]">
+                    <div className="flex items-center gap-3 text-muted-foreground text-[11px] shrink-0">
                       <span>{log.latency_ms ? `${Math.round(log.latency_ms / 1000)}s` : "< 2s"} generation</span>
                       <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30">
-                        {log.status === "success" ? "Ready & Published" : "Processing"}
+                        {log.status === "success" ? "Published" : "Failed"}
                       </Badge>
                     </div>
                   </div>
@@ -679,7 +1002,7 @@ console.log("Ready:", post.title);`;
               </div>
             ) : (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                No articles published yet. Connect your site using your key above to start publishing!
+                No articles published yet. Connect your site using your key above or try the Live Studio to publish!
               </div>
             )}
           </CardContent>
@@ -742,6 +1065,159 @@ console.log("Ready:", post.title);`;
                   Copy Connection Key
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* UPGRADE PLAN MODAL */}
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-2xl p-6">
+          <DialogHeader>
+            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-2">
+              <Zap className="h-5 w-5 text-primary" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-foreground">
+              Upgrade Your Monthly Article Plan
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Choose the right publishing volume to accelerate your organic search rankings.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
+            {Object.values(PLAN_TIERS).map((plan) => {
+              const isCurrent = (profile.plan_tier || "starter") === plan.id;
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-xl border p-4 flex flex-col justify-between space-y-4 relative ${
+                    plan.recommended
+                      ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
+                      : "border-border/70 bg-card/50"
+                  }`}
+                >
+                  {plan.recommended && (
+                    <Badge className="absolute -top-2.5 right-4 text-[10px] bg-primary text-primary-foreground font-semibold">
+                      Popular
+                    </Badge>
+                  )}
+
+                  <div>
+                    <h3 className="font-bold text-sm text-foreground">{plan.name}</h3>
+                    <div className="mt-2 flex items-baseline">
+                      <span className="text-2xl font-extrabold text-foreground">${plan.priceMonthly}</span>
+                      <span className="text-xs text-muted-foreground ml-1">/month</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">{plan.description}</p>
+
+                    <Separator className="my-3 bg-border/40" />
+
+                    <ul className="space-y-1.5 text-[11px] text-muted-foreground">
+                      {plan.features.map((f, i) => (
+                        <li key={i} className="flex items-center gap-1.5">
+                          <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    disabled={isCurrent || upgradingPlan !== null}
+                    onClick={() => handleUpgradePlan(plan.id)}
+                    className="w-full text-xs font-semibold"
+                    variant={isCurrent ? "secondary" : plan.recommended ? "default" : "outline"}
+                  >
+                    {upgradingPlan === plan.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : isCurrent ? (
+                      "Active Plan"
+                    ) : (
+                      `Upgrade to ${plan.name}`
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+
+          <DialogFooter className="flex justify-between items-center text-xs text-muted-foreground pt-2">
+            <span>Cancel anytime directly from your dashboard.</span>
+            <Button variant="ghost" size="sm" onClick={() => setShowUpgradeModal(false)} className="text-xs">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ARTICLE LOG DETAILS DIALOG */}
+      <Dialog open={Boolean(inspectedLog)} onOpenChange={(open) => !open && setInspectedLog(null)}>
+        <DialogContent className="border-border/80 bg-card/95 backdrop-blur-2xl max-w-lg p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-foreground">
+              Article Generation Details
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Telemetry and request diagnostics for this generated post.
+            </DialogDescription>
+          </DialogHeader>
+
+          {inspectedLog && (
+            <div className="space-y-3 my-2 text-xs">
+              <div className="p-3 bg-background/70 border border-border/60 rounded-lg">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Article Title</span>
+                <p className="font-semibold text-foreground text-sm mt-0.5">{inspectedLog.title || "Untitled Post"}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                  <span className="text-[10px] text-muted-foreground">Provider &amp; Model</span>
+                  <p className="font-mono font-medium text-foreground">{inspectedLog.provider_used} ({inspectedLog.model})</p>
+                </div>
+                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                  <span className="text-[10px] text-muted-foreground">Total Latency</span>
+                  <p className="font-mono font-medium text-foreground">{inspectedLog.latency_ms ? `${inspectedLog.latency_ms} ms` : "N/A"}</p>
+                </div>
+                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                  <span className="text-[10px] text-muted-foreground">Token Consumption</span>
+                  <p className="font-mono font-medium text-foreground">{inspectedLog.total_tokens || "N/A"} tokens</p>
+                </div>
+                <div className="p-2.5 bg-muted/20 border border-border/40 rounded-md">
+                  <span className="text-[10px] text-muted-foreground">Generation Status</span>
+                  <Badge variant="outline" className={`mt-0.5 text-[10px] ${inspectedLog.status === "success" ? "text-emerald-400" : "text-red-400"}`}>
+                    {inspectedLog.status.toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
+
+              {inspectedLog.error_message && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-300 text-[11px]">
+                  <span className="font-bold">Error: </span> {inspectedLog.error_message}
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex sm:justify-between items-center gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (inspectedLog?.title) {
+                  navigator.clipboard.writeText(inspectedLog.title);
+                  setCopiedLogTitle(true);
+                  setTimeout(() => setCopiedLogTitle(false), 2000);
+                }
+              }}
+              className="text-xs"
+            >
+              {copiedLogTitle ? "Copied Title" : "Copy Article Title"}
+            </Button>
+            <Button type="button" size="sm" onClick={() => setInspectedLog(null)} className="text-xs">
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>
