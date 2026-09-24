@@ -8,7 +8,7 @@ A multi-tenant AI blog generation platform that enables websites and digital age
 - **Database & Auth**: Supabase (PostgreSQL, Supabase Auth SSR, Row Level Security)
 - **AI Providers**: Groq SDK (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`), Google GenAI (`gemini-2.5-flash-lite`)
 - **Styling & UI**: Tailwind CSS, Radix UI primitives, Lucide React, Framer Motion
-- **Language & Runtime**: TypeScript 5, Node.js 20+
+- **Language & Runtime**: TypeScript 5, Node.js 22+ (LTS)
 
 ## Required Environment Variables
 
