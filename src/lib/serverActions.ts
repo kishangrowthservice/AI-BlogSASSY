@@ -11,16 +11,61 @@ import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
 async function verifyAdminAuth(): Promise<boolean> {
   const adminToken = process.env.ADMIN_SESSION_TOKEN;
   if (!adminToken) {
-    throw new Error("Missing required environment variable: ADMIN_SESSION_TOKEN");
+    return false;
   }
   try {
     const cookieStore = await cookies();
     const session = cookieStore.get("admin_session");
     return Boolean(session && session.value === adminToken);
   } catch {
-    // Support non-HTTP script/test environments (e.g. tsx verify scripts)
-    return process.env.NODE_ENV !== "production";
+    return false;
   }
+}
+
+/**
+ * Resolves the currently authenticated user's ID via Supabase server auth.
+ */
+export async function getAuthenticatedUserId(): Promise<string | null> {
+  try {
+    const serverAuth = await createSupabaseServerClient();
+    const { data: { user } } = await serverAuth.auth.getUser();
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Strictly verifies whether the given site profile is owned by the specified user
+ * (or currently authenticated user if userId not provided).
+ * Fails closed (returns false) if unauthenticated, site doesn't exist, or user_id doesn't match.
+ */
+export async function verifySiteOwnership(siteId: string, userId?: string): Promise<boolean> {
+  if (!siteId) return false;
+  const uid = userId || (await getAuthenticatedUserId());
+  if (!uid) return false;
+
+  try {
+    const supabase = getDbClient();
+    const { data, error } = await supabase
+      .from("site_profiles")
+      .select("user_id")
+      .eq("id", siteId)
+      .single();
+
+    if (!error && data) {
+      return data.user_id === uid;
+    }
+  } catch {
+    // Database check fallback
+  }
+
+  const local = localSiteProfiles.get(siteId);
+  if (local) {
+    return local.user_id === uid;
+  }
+
+  return false;
 }
 
 /**
@@ -118,7 +163,7 @@ export async function updateTenantByoKeys(
   byoGroqKey?: string | null,
   byoGeminiKey?: string | null
 ): Promise<boolean> {
-  const isAuthorized = await verifyAdminAuth();
+  const isAuthorized = (await verifyAdminAuth()) || (await verifySiteOwnership(siteId));
   if (!isAuthorized) {
     return false;
   }
@@ -228,7 +273,7 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
 
     const cleanedDomain = input.domain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 
-    // Resolve current authenticated Supabase user if present
+    // Resolve current authenticated Supabase user
     let authUserId: string | null = null;
     try {
       const serverAuth = await createSupabaseServerClient();
@@ -238,7 +283,10 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       // In test/non-HTTP context
     }
 
-    const targetUserId = input.user_id || authUserId;
+    const targetUserId = authUserId || input.user_id || null;
+    if (!targetUserId && process.env.NODE_ENV === "production") {
+      return { success: false, error: "Authentication required to onboard a site profile." };
+    }
 
     const payload: any = {
       site_name: input.site_name.trim(),
@@ -303,6 +351,11 @@ export async function generateTenantApiKeyAction(siteId: string): Promise<Genera
       return { success: false, error: "Site ID is required" };
     }
 
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized. You do not have permission to generate keys for this website." };
+    }
+
     const rawApiKey = createRawKey();
     const hashed = hashApiKey(rawApiKey);
     const keyPrefix = `gs_live_••••${rawApiKey.slice(-4)}`;
@@ -357,6 +410,11 @@ export async function getTenantDashboardData(siteId: string): Promise<TenantDash
   try {
     if (!siteId) {
       return { success: false, error: "Site ID is required" };
+    }
+
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized. You do not have permission to view this website dashboard." };
     }
 
     let profile: SiteProfile | null = null;
@@ -434,6 +492,11 @@ export async function updateTenantBrandAction(
   try {
     if (!siteId) return { success: false, error: "Site ID is required" };
 
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized. You do not have permission to modify this website profile." };
+    }
+
     const updatePayload = {
       brand_knowledge: input.brand_knowledge.trim(),
       tone: input.tone.trim(),
@@ -482,21 +545,6 @@ export async function getUserPrimarySiteId(): Promise<string | null> {
         .single();
 
       if (!error && data?.id) return data.id;
-
-      // Fallback: If tenant site was created before user_id binding or with null user_id,
-      // claim the most recent unassigned profile for this authenticated user
-      const { data: orphan } = await db
-        .from("site_profiles")
-        .select("id")
-        .is("user_id", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-
-      if (orphan?.id) {
-        await db.from("site_profiles").update({ user_id: user.id }).eq("id", orphan.id);
-        return orphan.id;
-      }
     } catch {
       // Local fallback
     }

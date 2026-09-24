@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getTenantDashboardData, getUserPrimarySiteId } from "@/lib/serverActions";
+import { getTenantDashboardData, getUserPrimarySiteId, verifySiteOwnership } from "@/lib/serverActions";
 import { toSafeSiteProfile } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/server";
 import { TenantDashboardClient } from "./TenantDashboardClient";
@@ -16,120 +16,46 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = await searchParams;
-  let siteId = params.siteId;
+  const requestedSiteId = params.siteId;
+
+  // 1. Unconditionally require authenticated user session
   let currentUserEmail: string | null = null;
   let currentUserId: string | null = null;
-  let shouldRedirectToOnboard = false;
-  let shouldRedirectToLogin = false;
 
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (user) {
-      currentUserEmail = user.email || null;
-      currentUserId = user.id;
-      if (!siteId) {
-        const primarySiteId = await getUserPrimarySiteId();
-        if (primarySiteId) {
-          siteId = primarySiteId;
-        } else {
-          shouldRedirectToOnboard = true;
-        }
-      }
-    } else {
-      shouldRedirectToLogin = true;
+    if (!user) {
+      redirect("/login");
     }
+
+    currentUserEmail = user.email || null;
+    currentUserId = user.id;
   } catch {
-    shouldRedirectToLogin = true;
-  }
-
-  if (shouldRedirectToOnboard) {
-    redirect("/onboard");
-  }
-
-  if (shouldRedirectToLogin) {
     redirect("/login");
   }
 
-  if (!siteId) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-border/80 bg-card/60 backdrop-blur-xl text-center p-6 space-y-4">
-          <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto">
-            <Sparkles className="h-6 w-6 text-indigo-400" />
-          </div>
-
-          <CardHeader className="p-0">
-            <CardTitle className="text-xl font-bold">No Site Selected</CardTitle>
-            <CardDescription className="text-xs">
-              To view your client dashboard, please register a website or access via your dedicated client link.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="p-0 pt-2 space-y-3">
-            <Button asChild className="w-full text-xs gap-2">
-              <Link href="/onboard">
-                <PlusCircle className="h-4 w-4" />
-                Register New Site Profile
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="w-full text-xs">
-              <Link href="/">Back to Home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // 2. Resolve user's primary site from session
+  const primarySiteId = await getUserPrimarySiteId();
+  if (!primarySiteId) {
+    redirect("/onboard");
   }
 
-  const result = await getTenantDashboardData(siteId);
-
-  // IDOR protection: prevent logged-in user from inspecting another tenant's profile
-  if (result.profile?.user_id && currentUserId && result.profile.user_id !== currentUserId) {
-    const primarySiteId = await getUserPrimarySiteId();
-    if (primarySiteId) {
-      redirect(`/dashboard?siteId=${primarySiteId}`);
-    } else {
-      redirect("/onboard");
+  // 3. Resolve active siteId: if requestedSiteId is provided, strictly verify user owns it
+  let activeSiteId = primarySiteId;
+  if (requestedSiteId && requestedSiteId !== primarySiteId) {
+    const isOwner = await verifySiteOwnership(requestedSiteId, currentUserId);
+    if (isOwner) {
+      activeSiteId = requestedSiteId;
     }
   }
+
+  // 4. Fetch dashboard data for the verified site
+  const result = await getTenantDashboardData(activeSiteId);
 
   if (!result.success || !result.profile) {
-    // If current authenticated user has an active primary site, auto-recover to it
-    if (currentUserEmail) {
-      const primarySiteId = await getUserPrimarySiteId();
-      if (primarySiteId && primarySiteId !== siteId) {
-        redirect(`/dashboard?siteId=${primarySiteId}`);
-      }
-    }
-
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-border/80 bg-card/60 backdrop-blur-xl text-center p-6 space-y-4">
-          <CardHeader className="p-0">
-            <CardTitle className="text-xl font-bold">Website Profile Not Found</CardTitle>
-            <CardDescription className="text-xs">
-              We couldn&apos;t locate this website profile in our records.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="p-0 pt-2 space-y-3">
-            <Button asChild className="w-full text-xs gap-2">
-              <Link href="/onboard">
-                <PlusCircle className="h-4 w-4" />
-                Register Site Profile
-              </Link>
-            </Button>
-
-            <Button asChild variant="outline" className="w-full text-xs">
-              <Link href="/">Back to Home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    redirect("/onboard");
   }
 
   return (

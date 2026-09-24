@@ -913,8 +913,16 @@ console.log("Published:", article.title, article.url);`;
             )}
           </div>
 
-          <div>
-            &copy; {new Date().getFullYear()} GrowthService Inc. All rights reserved.
+          <div className="flex items-center gap-4 text-xs">
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms
+            </Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy
+            </Link>
+            <span>•</span>
+            <span>&copy; {new Date().getFullYear()} GrowthService Inc. All rights reserved.</span>
           </div>
         </div>
       </footer>

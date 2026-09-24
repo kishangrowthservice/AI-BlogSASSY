@@ -55,8 +55,8 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long for account and API key security.");
       return;
     }
 
@@ -289,7 +289,14 @@ export default function SignupPage() {
                   </Button>
 
                   <p className="text-[11px] text-center text-muted-foreground">
-                    By signing up, you agree to our Terms of Service and Privacy Policy.
+                    By signing up, you agree to our{" "}
+                    <Link href="/terms" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground transition-colors">
+                      Privacy Policy
+                    </Link>.
                   </p>
                 </CardFooter>
               </form>
@@ -300,7 +307,13 @@ export default function SignupPage() {
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-4 px-4 text-center text-xs text-muted-foreground">
-        &copy; {new Date().getFullYear()} AI Blog SaaS Platform. All rights reserved.
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <span>&copy; {new Date().getFullYear()} AI Blog SaaS Platform.</span>
+          <div className="flex gap-3">
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
