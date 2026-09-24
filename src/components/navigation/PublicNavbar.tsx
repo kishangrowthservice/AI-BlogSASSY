@@ -69,12 +69,12 @@ export function PublicNavbar({ initialEmail }: PublicNavbarProps = {}) {
   }, [initialEmail]);
 
   const navLinks = [
-    { label: "How It Works", href: "/#how-it-works" },
-    { label: "Features", href: "/#features" },
-    { label: "Architecture", href: "/#architecture" },
-    { label: "ROI Calculator", href: "/#calculator" },
-    { label: "Pricing", href: "/#pricing" },
-    { label: "FAQ", href: "/#faq" },
+    { label: "Features", href: "/features" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Integrations", href: "/integrations" },
+    { label: "Docs", href: "/docs" },
+    { label: "Changelog", href: "/changelog" },
+    { label: "Contact", href: "/contact" },
   ];
 
   return (

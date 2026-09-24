@@ -41,18 +41,13 @@ export function PublicFooter() {
             <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">Product</h4>
             <ul className="space-y-2.5">
               <li>
-                <Link href="/#how-it-works" className="hover:text-foreground transition-colors">
-                  Autonomous Scheduling
+                <Link href="/features" className="hover:text-foreground transition-colors">
+                  Platform Features
                 </Link>
               </li>
               <li>
-                <Link href="/#features" className="hover:text-foreground transition-colors">
-                  Dual-LLM Engine
-                </Link>
-              </li>
-              <li>
-                <Link href="/#calculator" className="hover:text-foreground transition-colors">
-                  ROI &amp; Margin Calculator
+                <Link href="/pricing" className="hover:text-foreground transition-colors">
+                  Pricing Plans
                 </Link>
               </li>
               <li>
@@ -62,8 +57,13 @@ export function PublicFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/#pricing" className="hover:text-foreground transition-colors">
-                  Pricing Plans
+                <Link href="/docs" className="hover:text-foreground transition-colors">
+                  API &amp; Developer Docs
+                </Link>
+              </li>
+              <li>
+                <Link href="/changelog" className="hover:text-foreground transition-colors">
+                  Changelog &amp; Releases
                 </Link>
               </li>
             </ul>
@@ -74,37 +74,42 @@ export function PublicFooter() {
             <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">Integrations</h4>
             <ul className="space-y-2.5">
               <li>
-                <span className="hover:text-foreground transition-colors cursor-default">
-                  WordPress (Webhook API)
-                </span>
+                <Link href="/integrations" className="hover:text-foreground transition-colors">
+                  WordPress Webhook
+                </Link>
               </li>
               <li>
-                <span className="hover:text-foreground transition-colors cursor-default">
-                  Shopify Blog API
-                </span>
+                <Link href="/integrations" className="hover:text-foreground transition-colors">
+                  Shopify Store Blog
+                </Link>
               </li>
               <li>
-                <span className="hover:text-foreground transition-colors cursor-default">
+                <Link href="/integrations" className="hover:text-foreground transition-colors">
                   Webflow CMS
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-foreground transition-colors cursor-default">
+                <Link href="/integrations" className="hover:text-foreground transition-colors">
                   Ghost Publishing
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-foreground transition-colors cursor-default">
-                  Custom REST / HMAC Webhooks
-                </span>
+                <Link href="/integrations" className="hover:text-foreground transition-colors">
+                  Zapier &amp; Make
+                </Link>
               </li>
             </ul>
           </div>
 
-          {/* Legal & Operations */}
+          {/* Company & Support */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">Legal &amp; Trust</h4>
+            <h4 className="font-semibold text-foreground text-xs uppercase tracking-wider">Company &amp; Legal</h4>
             <ul className="space-y-2.5">
+              <li>
+                <Link href="/contact" className="hover:text-foreground transition-colors">
+                  Contact &amp; Support
+                </Link>
+              </li>
               <li>
                 <Link href="/terms" className="hover:text-foreground transition-colors">
                   Terms of Service (Draft)
@@ -124,11 +129,6 @@ export function PublicFooter() {
                 <Link href="/admin/login" className="hover:text-foreground transition-colors">
                   Internal Ops Console
                 </Link>
-              </li>
-              <li>
-                <a href="mailto:support@growthservice.in" className="hover:text-foreground transition-colors">
-                  support@growthservice.in
-                </a>
               </li>
             </ul>
           </div>
