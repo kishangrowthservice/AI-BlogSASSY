@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { PublicNavbar } from "@/components/navigation/PublicNavbar";
+import { PublicFooter } from "@/components/navigation/PublicFooter";
 import { createClient } from "@/lib/supabase/client";
 import {
   Sparkles,
@@ -143,99 +145,7 @@ console.log("Published:", article.title, article.url);`;
       </div>
 
       {/* Modern SaaS Navigation Bar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all">
-        <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo & Brand */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-md shadow-indigo-500/20 transition-transform group-hover:scale-105">
-              <div className="h-full w-full rounded-[10px] bg-background flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-indigo-400 group-hover:rotate-12 transition-transform duration-300" />
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold tracking-tight text-foreground text-base leading-none">
-                AI Blog SaaS
-              </span>
-              <span className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                AUTONOMOUS ORGANIC GROWTH
-              </span>
-            </div>
-          </Link>
-
-          {/* Center Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">
-              How It Works
-            </a>
-            <a href="#features" className="hover:text-foreground transition-colors">
-              Features
-            </a>
-            <a href="#calculator" className="hover:text-foreground transition-colors">
-              ROI Calculator
-            </a>
-            <a href="#pricing" className="hover:text-foreground transition-colors">
-              Pricing
-            </a>
-            <a href="#faq" className="hover:text-foreground transition-colors">
-              FAQ
-            </a>
-          </nav>
-
-          {/* Actions & Health Badge */}
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-              </span>
-              <span>Publishing 24/7 Active</span>
-            </div>
-
-            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex text-xs">
-              <Link href="/preview">
-                <Sparkles className="h-3.5 w-3.5 mr-1 text-purple-400" />
-                Interactive Studio
-              </Link>
-            </Button>
-
-            {userEmail ? (
-              <div className="flex items-center gap-2">
-                <span className="hidden md:inline-flex text-xs text-muted-foreground font-medium border border-border/40 px-2.5 py-1 rounded-full bg-muted/20">
-                  {userEmail}
-                </span>
-
-                <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
-                  <Link href="/dashboard">
-                    Dashboard
-                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                  </Link>
-                </Button>
-
-                <Button asChild variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
-                  <Link href="/auth/signout">
-                    Sign Out
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button asChild variant="ghost" size="sm" className="text-xs">
-                  <Link href="/login">
-                    Sign In
-                  </Link>
-                </Button>
-
-                <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-medium text-xs">
-                  <Link href="/signup">
-                    Get Started Free
-                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                  </Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <PublicNavbar initialEmail={userEmail} />
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 sm:pt-28 sm:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col items-center text-center">
@@ -1065,79 +975,7 @@ console.log("Published:", article.title, article.url);`;
       </section>
 
       {/* Enterprise Multi-Column SaaS Footer */}
-      <footer className="border-t border-border/40 bg-background/80 py-16 px-4 sm:px-6 lg:px-8 text-xs text-muted-foreground mt-auto">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-            {/* Brand Column */}
-            <div className="col-span-2 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5">
-                  <div className="h-full w-full rounded-[6px] bg-background flex items-center justify-center">
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-                  </div>
-                </div>
-                <span className="font-bold text-foreground text-base tracking-tight">AI Blog SaaS</span>
-              </div>
-              <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
-                Autonomous organic traffic engine for growing brands and digital agencies. Powered by dual-LLM resilience, Brand DNA tuning, and direct CMS webhook publishing.
-              </p>
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>All Systems Operational (99.99%)</span>
-              </div>
-            </div>
-
-            {/* Column 1: Product */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">Product</h4>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a></li>
-                <li><a href="#features" className="hover:text-foreground transition-colors">Core Features</a></li>
-                <li><a href="#calculator" className="hover:text-foreground transition-colors">ROI Calculator</a></li>
-                <li><a href="#pricing" className="hover:text-foreground transition-colors">Plans &amp; Pricing</a></li>
-                <li><Link href="/preview" className="hover:text-foreground transition-colors">Interactive Studio</Link></li>
-              </ul>
-            </div>
-
-            {/* Column 2: Integrations */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">Integrations</h4>
-              <ul className="space-y-2 text-xs">
-                <li><span className="text-muted-foreground">WordPress Plugin</span></li>
-                <li><span className="text-muted-foreground">Shopify Blog API</span></li>
-                <li><span className="text-muted-foreground">Webflow Webhook</span></li>
-                <li><span className="text-muted-foreground">Zapier &amp; Make Hooks</span></li>
-                <li><span className="text-muted-foreground">Lightweight Node SDK</span></li>
-              </ul>
-            </div>
-
-            {/* Column 3: Legal & Account */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">Legal &amp; Access</h4>
-              <ul className="space-y-2 text-xs">
-                <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/login" className="hover:text-foreground transition-colors">Client Login</Link></li>
-                <li><Link href="/signup" className="hover:text-foreground transition-colors">Create Free Account</Link></li>
-                <li><Link href="/admin/login" className="hover:text-foreground transition-colors text-muted-foreground/60">Admin Portal</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <Separator className="bg-border/40" />
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-            <span>&copy; {new Date().getFullYear()} GrowthService Inc. All rights reserved.</span>
-            <div className="flex items-center gap-4">
-              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-              <span>•</span>
-              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-              <span>•</span>
-              <span>Built with Dual-LLM Resilience</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

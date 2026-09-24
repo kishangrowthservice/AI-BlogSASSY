@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { MiniAuthNav, MiniAuthFooter } from "@/components/navigation/MiniAuthNav";
 import { createClient } from "@/lib/supabase/client";
 import {
   Sparkles,
@@ -143,24 +144,14 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20">
-      {/* Top Navbar */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur px-4 sm:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5">
-            <div className="h-full w-full rounded-[6px] bg-background flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-indigo-400" />
-            </div>
-          </div>
-          <span className="font-bold text-base tracking-tight">AI Blog SaaS</span>
-        </Link>
-
-        <div className="text-xs text-muted-foreground">
+      <MiniAuthNav rightContent={
+        <>
           Already have an account?{" "}
-          <Link href="/login" className="text-foreground font-semibold hover:underline">
+          <Link href="/login" className="text-foreground font-semibold hover:underline ml-1">
             Sign In
           </Link>
-        </div>
-      </header>
+        </>
+      } />
 
       {/* Main Center Form */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
@@ -325,16 +316,7 @@ export default function SignupPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border/40 py-4 px-4 text-center text-xs text-muted-foreground">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <span>&copy; {new Date().getFullYear()} AI Blog SaaS Platform.</span>
-          <div className="flex gap-3">
-            <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-          </div>
-        </div>
-      </footer>
+      <MiniAuthFooter />
     </div>
   );
 }

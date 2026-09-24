@@ -2,91 +2,107 @@ import React from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, ShieldCheck, AlertTriangle } from "lucide-react";
+import { MiniAuthNav, MiniAuthFooter } from "@/components/navigation/MiniAuthNav";
+import { ShieldCheck, AlertTriangle, Database, Cookie, Share2, Mail, Lock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Privacy Policy (Draft) | AI Blog SaaS",
-  description: "Privacy Policy draft placeholder pending legal review.",
+  description: "Privacy Policy draft placeholder for AI Blog SaaS. Pending formal legal review — not yet enforceable.",
 };
+
+const SECTIONS = [
+  {
+    icon: <Database className="h-4 w-4 text-indigo-400" />,
+    title: "1. Data We Collect",
+    body: "We collect your email address and account credentials during signup, your website and brand configuration settings stored in your tenant profile, and AI generation telemetry (counts, timestamps, provider used) for quota enforcement and analytics. We do not collect payment card information directly — billing is handled by a compliant third-party processor.",
+  },
+  {
+    icon: <Lock className="h-4 w-4 text-purple-400" />,
+    title: "2. Tenant Data Isolation",
+    body: "AI Blog SaaS implements strict multi-tenant isolation via Row Level Security (RLS) policies in Supabase. Your website configurations, API keys, brand knowledge, and generation logs are logically isolated from all other tenants. Only your authenticated session can access your tenant data through production endpoints.",
+  },
+  {
+    icon: <Share2 className="h-4 w-4 text-emerald-400" />,
+    title: "3. Third-Party Processors",
+    body: "Blog content is generated using third-party LLM providers (Groq, Google Gemini) via server-side API calls. Your website brand context may be included in these prompts to provide context-aware output. These providers have their own data handling policies. We do not sell or rent your personal data to third parties for marketing purposes.",
+  },
+  {
+    icon: <Cookie className="h-4 w-4 text-amber-400" />,
+    title: "4. Cookies & Session Data",
+    body: "We use strictly necessary session cookies for authentication purposes only. We do not use third-party advertising cookies or behavioral tracking cookies. Analytics data (if enabled) is aggregated and anonymized.",
+  },
+  {
+    icon: <Mail className="h-4 w-4 text-rose-400" />,
+    title: "5. Your Rights & Data Deletion",
+    body: "You may request deletion of your account and all associated data by emailing privacy@growthservice.in. Full statutory rights (GDPR, CCPA, etc.) applicable to your jurisdiction will be comprehensively documented in the final version of this policy pending legal review.",
+  },
+];
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between selection:bg-primary/20">
-      {/* Top Navbar matching /login */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur px-4 sm:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5">
-            <div className="h-full w-full rounded-[6px] bg-background flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-indigo-400" />
-            </div>
-          </div>
-          <span className="font-bold text-base tracking-tight">AI Blog SaaS</span>
+      <MiniAuthNav rightContent={
+        <Link href="/login" className="text-foreground font-semibold hover:underline">
+          Sign In
         </Link>
+      } />
 
-        <div className="text-xs text-muted-foreground">
-          <Link href="/login" className="text-foreground font-semibold hover:underline">
-            Sign In
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Center Content */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl space-y-4">
+
+          {/* Draft Banner */}
+          <div className="flex items-center gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+            <p className="text-xs text-amber-300 leading-relaxed">
+              <strong className="text-amber-200">Draft Placeholder — Not Yet Enforceable.</strong>{" "}
+              This document is for link-resolution purposes only. Final Privacy Policy is pending qualified legal review and has not yet been published.
+            </p>
+          </div>
+
           <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-xl">
             <CardHeader>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium w-fit mb-2">
-                <AlertTriangle className="h-3 w-3" />
-                Draft Placeholder — Pending Legal Review
-              </div>
-              <CardTitle className="text-2xl font-bold tracking-tight">Privacy Policy</CardTitle>
+              <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                Privacy Policy
+              </CardTitle>
               <CardDescription className="text-xs">
-                Draft document for demonstration and link-resolution purposes.
+                Last updated: {new Date().toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })} (Draft — Pending Legal Review)
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4 text-xs text-muted-foreground leading-relaxed">
-              <div className="rounded-lg border border-border/80 bg-background/50 p-4 space-y-2">
-                <p className="font-semibold text-foreground flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                  Legal Notice
-                </p>
-                <p>
-                  This is a clearly-labeled draft placeholder page pending formal legal review by qualified privacy counsel. This text does not constitute legally binding privacy guarantees or representations yet.
-                </p>
-              </div>
+            <CardContent className="space-y-5">
+              {SECTIONS.map((section) => (
+                <div key={section.title} className="space-y-1.5 border-b border-border/40 last:border-0 pb-4 last:pb-0">
+                  <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                    {section.icon}
+                    {section.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed pl-6">
+                    {section.body}
+                  </p>
+                </div>
+              ))}
 
-              <div className="space-y-2">
-                <h3 className="font-semibold text-foreground text-sm">Tenant Data Isolation Overview</h3>
-                <p>
-                  AI Blog SaaS implements strict logical data isolation between tenants. Website configurations, brand knowledge, API keys, and generation telemetry are scoped by unique tenant IDs. Formal privacy policies detailing data retention cycles, LLM processor data handling, and statutory privacy rights will be published here upon completion of review.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-semibold text-foreground text-sm">Contact Information</h3>
-                <p>
-                  For privacy requests, data deletion inquiries, or security questions, please reach out to <span className="font-mono text-foreground">privacy@growthservice.in</span>.
-                </p>
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-muted-foreground">
+                <strong className="text-foreground">Privacy Inquiries:</strong> Contact us at{" "}
+                <span className="font-mono text-foreground">privacy@growthservice.in</span> for data
+                deletion requests, access requests, or security disclosures.
               </div>
             </CardContent>
 
             <CardFooter className="border-t border-border/40 pt-4 flex items-center justify-between text-xs">
-              <Link href="/" className="text-muted-foreground hover:underline">
-                &larr; Back to Home
+              <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+                ← Back to Home
               </Link>
               <Link href="/terms" className="text-indigo-400 hover:underline">
-                View Terms of Service (Draft) &rarr;
+                View Terms of Service (Draft) →
               </Link>
             </CardFooter>
           </Card>
         </div>
       </main>
 
-      {/* Footer matching /login */}
-      <footer className="border-t border-border/40 py-4 px-4 text-center text-xs text-muted-foreground">
-        &copy; {new Date().getFullYear()} AI Blog SaaS Platform. All rights reserved.
-      </footer>
+      <MiniAuthFooter />
     </div>
   );
 }
