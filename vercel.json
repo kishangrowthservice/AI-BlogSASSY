@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/process-queue",
-      "schedule": "* * * * *"
+      "path": "/api/cron/reset-quotas",
+      "schedule": "0 0 * * *"
     }
   ]
 }
