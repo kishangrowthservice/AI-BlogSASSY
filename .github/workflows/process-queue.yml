@@ -1,0 +1,22 @@
+name: Process Queue Cron
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  process-queue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping process-queue endpoint
+        run: |
+          if [ -z "${{ secrets.PROD_URL }}" ]; then
+            echo "PROD_URL secret is not set. Please set it to your Vercel deployment URL (e.g. https://my-blog-saas.vercel.app)"
+            exit 1
+          fi
+          
+          curl -X POST "${{ secrets.PROD_URL }}/api/cron/process-queue" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --fail --silent --show-error
