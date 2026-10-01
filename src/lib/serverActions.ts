@@ -9,7 +9,7 @@ import { dispatchCmsWebhook, computeWebhookSignature } from "./webhookDispatcher
 import type { SiteProfile, GenerationLog, GenerateBlogParams, GeneratedBlogPost, GenerationTelemetry } from "./types";
 import { toSafeSiteProfile, type SafeSiteProfile } from "./sanitize";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
-import { runFullSiteCrawlAndSynthesis } from "./crawler/brandSynthesizer";
+import { runFullSiteCrawlAndSynthesis, liveCrawlState } from "./crawler/brandSynthesizer";
 
 async function verifyAdminAuth(): Promise<boolean> {
   const adminToken = process.env.ADMIN_SESSION_TOKEN;
@@ -113,7 +113,7 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
       monthly_quota: input.monthly_quota && input.monthly_quota > 0 ? input.monthly_quota : 100,
       used_quota: 0,
       groq_model: input.groq_model || "openai/gpt-oss-120b",
-      gemini_model: input.gemini_model || "gemini-2.5-flash-lite",
+      gemini_model: input.gemini_model || "gemini-3.8-flash",
       byo_groq_api_key: input.byo_groq_api_key?.trim() || undefined,
       byo_gemini_api_key: input.byo_gemini_api_key?.trim() || undefined,
     };
@@ -304,7 +304,7 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       monthly_quota: 25, // Starter free quota
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-2.5-flash-lite",
+      gemini_model: "gemini-3.8-flash",
     };
 
     const supabase = getDbClient();
@@ -416,7 +416,7 @@ export async function startSiteOnboardUrlAction(input: {
       monthly_quota: monthlyQuota,
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-2.5-flash-lite",
+      gemini_model: "gemini-3.8-flash",
       plan_tier: selectedPlan,
       crawl_status: "in_progress",
       crawl_progress: 10,
@@ -435,13 +435,36 @@ export async function startSiteOnboardUrlAction(input: {
 
       if (!error && data?.id) {
         siteId = data.id;
+      } else if (error) {
+        // Fallback: If migration 017/015 columns are not on Supabase table yet, insert core columns
+        const { plan_tier, crawl_status, crawl_progress, crawl_page_count, crawl_error, ...basePayload } = payload;
+        const { data: baseData, error: baseError } = await db
+          .from("site_profiles")
+          .insert([basePayload])
+          .select("id")
+          .single();
+
+        if (!baseError && baseData?.id) {
+          siteId = baseData.id;
+        } else if (baseError) {
+          console.error("[startSiteOnboardUrlAction] DB insert error:", baseError);
+        }
       }
-    } catch {}
+    } catch (dbErr) {
+      console.error("[startSiteOnboardUrlAction] DB exception:", dbErr);
+    }
 
     if (!siteId) {
       siteId = crypto.randomUUID();
       localSiteProfiles.set(siteId, { id: siteId, ...payload, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
     }
+
+    // Set initial live crawl state
+    liveCrawlState.set(siteId, {
+      crawl_status: "in_progress",
+      crawl_progress: 10,
+      crawl_page_count: 1,
+    });
 
     // Trigger deep crawling and AI brand synthesis asynchronously
     runFullSiteCrawlAndSynthesis(siteId, urlObj.origin).catch((err) => {
@@ -479,25 +502,31 @@ export async function getCrawlStatusAction(siteId: string): Promise<{
   try {
     if (!siteId) return { success: false, error: "Site ID is required" };
 
+    const live = liveCrawlState.get(siteId);
+
     const db = getDbClient();
     const { data, error } = await db
       .from("site_profiles")
-      .select("crawl_status, crawl_progress, crawl_page_count, crawl_error, site_name, domain, tone, target_audience, internal_links")
+      .select("*")
       .eq("id", siteId)
       .single();
 
     if (!error && data) {
+      const isPlaceholder = (data.brand_knowledge || "").includes("Website analysis and deep crawling in progress");
+      const derivedStatus = isPlaceholder ? "in_progress" : "completed";
+      const derivedProgress = isPlaceholder ? 40 : 100;
+
       return {
         success: true,
-        crawl_status: data.crawl_status || "completed",
-        crawl_progress: data.crawl_progress ?? 100,
-        crawl_page_count: data.crawl_page_count ?? 0,
-        crawl_error: data.crawl_error,
-        site_name: data.site_name,
+        crawl_status: live?.crawl_status || data.crawl_status || derivedStatus,
+        crawl_progress: live?.crawl_progress ?? (data.crawl_progress ?? derivedProgress),
+        crawl_page_count: live?.crawl_page_count ?? (data.crawl_page_count ?? (Array.isArray(data.internal_links) ? data.internal_links.length : 0)),
+        crawl_error: live?.crawl_error || data.crawl_error || null,
+        site_name: live?.site_name || data.site_name,
         domain: data.domain,
-        tone: data.tone,
-        target_audience: data.target_audience,
-        internal_links_count: Array.isArray(data.internal_links) ? data.internal_links.length : 0,
+        tone: live?.tone || data.tone,
+        target_audience: live?.target_audience || data.target_audience,
+        internal_links_count: live?.internal_links?.length || (Array.isArray(data.internal_links) ? data.internal_links.length : 0),
       };
     }
 
@@ -505,15 +534,15 @@ export async function getCrawlStatusAction(siteId: string): Promise<{
     if (local) {
       return {
         success: true,
-        crawl_status: local.crawl_status || "completed",
-        crawl_progress: local.crawl_progress ?? 100,
-        crawl_page_count: local.crawl_page_count ?? 0,
-        crawl_error: local.crawl_error,
-        site_name: local.site_name,
+        crawl_status: live?.crawl_status || local.crawl_status || "completed",
+        crawl_progress: live?.crawl_progress ?? (local.crawl_progress ?? 100),
+        crawl_page_count: live?.crawl_page_count ?? (local.crawl_page_count ?? 0),
+        crawl_error: live?.crawl_error || local.crawl_error,
+        site_name: live?.site_name || local.site_name,
         domain: local.domain,
-        tone: local.tone,
-        target_audience: local.target_audience,
-        internal_links_count: local.internal_links?.length || 0,
+        tone: live?.tone || local.tone,
+        target_audience: live?.target_audience || local.target_audience,
+        internal_links_count: live?.internal_links?.length || local.internal_links?.length || 0,
       };
     }
 
@@ -549,8 +578,17 @@ export async function triggerRecrawlAction(siteId: string): Promise<{ success: b
 
     const targetUrl = domain.startsWith("http") ? domain : `https://${domain}`;
 
+    liveCrawlState.set(siteId, {
+      crawl_status: "in_progress",
+      crawl_progress: 15,
+      crawl_page_count: 1,
+    });
+
     // Mark in_progress
-    await db.from("site_profiles").update({ crawl_status: "in_progress", crawl_progress: 10, crawl_error: null }).eq("id", siteId);
+    try {
+      await db.from("site_profiles").update({ crawl_status: "in_progress", crawl_progress: 10, crawl_error: null }).eq("id", siteId);
+    } catch {}
+
     const local = localSiteProfiles.get(siteId);
     if (local) {
       local.crawl_status = "in_progress";

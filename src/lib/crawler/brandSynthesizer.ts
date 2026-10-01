@@ -79,7 +79,8 @@ const BRAND_SYNTHESIS_SCHEMA = {
           label: { type: "string" },
           category: { type: "string" },
         },
-        required: ["url", "label"],
+        required: ["url", "label", "category"],
+        additionalProperties: false,
       },
     },
   },
@@ -150,7 +151,7 @@ Output strictly valid JSON matching the requested schema.`;
   if (gemini) {
     try {
       const res = await gemini.models.generateContent({
-        model: "gemini-2.5-flash-lite",
+        model: "gemini-3.8-flash",
         contents: prompt,
         config: {
           responseMimeType: "application/json",
@@ -211,6 +212,19 @@ function formatSynthesizedProfile(
   return { brandName, brandKnowledge, tone, targetAudience, internalLinks };
 }
 
+export interface LiveCrawlProgress {
+  crawl_status: "idle" | "in_progress" | "completed" | "failed";
+  crawl_progress: number;
+  crawl_page_count: number;
+  crawl_error?: string | null;
+  site_name?: string;
+  tone?: string;
+  target_audience?: string;
+  internal_links?: InternalLinkItem[];
+}
+
+export const liveCrawlState = new Map<string, LiveCrawlProgress>();
+
 /**
  * Executes full deep crawl and AI brand synthesis for a site_profile ID.
  */
@@ -221,6 +235,12 @@ export async function runFullSiteCrawlAndSynthesis(
   const db = getDbClient();
 
   const updateStatus = async (progress: number, msg: string) => {
+    liveCrawlState.set(siteId, {
+      crawl_status: "in_progress",
+      crawl_progress: progress,
+      crawl_page_count: Math.max(1, Math.round((progress / 100) * 15)),
+    });
+
     try {
       await db
         .from("site_profiles")
@@ -255,7 +275,7 @@ export async function runFullSiteCrawlAndSynthesis(
     await updateStatus(96, "Saving synthesized brand intelligence...");
 
     // 3. Update site_profiles in DB
-    const updates = {
+    const updates: any = {
       site_name: synthesized.brandName,
       brand_knowledge: synthesized.brandKnowledge,
       tone: synthesized.tone,
@@ -268,8 +288,24 @@ export async function runFullSiteCrawlAndSynthesis(
       updated_at: new Date().toISOString(),
     };
 
+    liveCrawlState.set(siteId, {
+      crawl_status: "completed",
+      crawl_progress: 100,
+      crawl_page_count: crawlResult.pages.length,
+      crawl_error: null,
+      site_name: synthesized.brandName,
+      tone: synthesized.tone,
+      target_audience: synthesized.targetAudience,
+      internal_links: synthesized.internalLinks,
+    });
+
     try {
-      await db.from("site_profiles").update(updates).eq("id", siteId);
+      const { error } = await db.from("site_profiles").update(updates).eq("id", siteId);
+      if (error) {
+        // Fallback for when migration 017 columns are not yet on Supabase schema
+        const { crawl_status, crawl_progress, crawl_page_count, crawl_error, ...coreUpdates } = updates;
+        await db.from("site_profiles").update(coreUpdates).eq("id", siteId);
+      }
     } catch (dbErr) {
       console.warn("[brandSynthesizer] DB update error:", dbErr);
     }
@@ -282,7 +318,14 @@ export async function runFullSiteCrawlAndSynthesis(
     console.log(`[brandSynthesizer] Successfully synthesized site ${siteId} (${synthesized.brandName}) from ${crawlResult.pages.length} pages.`);
   } catch (err: any) {
     console.error(`[brandSynthesizer] Crawl and synthesis failed for site ${siteId}:`, err);
-    const errorUpdates = {
+    liveCrawlState.set(siteId, {
+      crawl_status: "failed",
+      crawl_progress: 0,
+      crawl_page_count: 0,
+      crawl_error: err?.message || "Crawl and brand synthesis failed",
+    });
+
+    const errorUpdates: any = {
       crawl_status: "failed",
       crawl_error: err?.message || "Crawl and brand synthesis failed",
       updated_at: new Date().toISOString(),
