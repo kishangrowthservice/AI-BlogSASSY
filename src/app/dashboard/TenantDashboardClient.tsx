@@ -38,7 +38,9 @@ export function TenantDashboardClient({
   const [keyPrefix, setKeyPrefix] = useState<string | null>(initialKeyPrefix);
   const [logs, setLogs] = useState<GenerationLog[]>(initialLogs);
   const [currentTab, setCurrentTab] = useState<DashboardTab>("usage-graphs");
-  const [apiOrigin, setApiOrigin] = useState("https://api.growthservice.in");
+  const [apiOrigin, setApiOrigin] = useState(
+    typeof window !== "undefined" ? window.location.origin : ""
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Modals state
