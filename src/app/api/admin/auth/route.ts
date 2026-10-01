@@ -5,17 +5,16 @@ import { getDbClient } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-function requireEnv(key: string): string {
-  const val = process.env[key];
-  if (!val) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
-  return val;
-}
-
-const ADMIN_PASSWORD = requireEnv("ADMIN_PASSWORD");
-const SESSION_TOKEN = requireEnv("ADMIN_SESSION_TOKEN");
 const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+function getAdminAuthEnv(): { adminPassword: string; sessionToken: string } {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const sessionToken = process.env.ADMIN_SESSION_TOKEN;
+  if (!adminPassword || !sessionToken) {
+    throw new Error("Missing required environment variable: ADMIN_PASSWORD or ADMIN_SESSION_TOKEN");
+  }
+  return { adminPassword, sessionToken };
+}
 
 // Local fallback in-memory map
 const localLoginAttempts = new Map<string, { count: number; lockedUntil: number }>();
@@ -104,8 +103,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Password required" }, { status: 400 });
     }
 
+    const { adminPassword, sessionToken } = getAdminAuthEnv();
     const inputHash = crypto.createHash("sha256").update(password).digest();
-    const adminHash = crypto.createHash("sha256").update(ADMIN_PASSWORD).digest();
+    const adminHash = crypto.createHash("sha256").update(adminPassword).digest();
     const isPasswordValid = crypto.timingSafeEqual(inputHash, adminHash);
 
     if (!isPasswordValid) {
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
 
     const expires = new Date(Date.now() + SESSION_DURATION_MS);
     const cookieStore = await cookies();
-    cookieStore.set("admin_session", SESSION_TOKEN, {
+    cookieStore.set("admin_session", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

@@ -4,13 +4,13 @@ import { processNextQueueJobs } from "@/lib/queueService";
 
 export const runtime = "nodejs";
 
-const ADMIN_TOKEN = process.env.ADMIN_SESSION_TOKEN;
-if (!ADMIN_TOKEN) {
-  throw new Error("Missing required environment variable: ADMIN_SESSION_TOKEN");
-}
-
 async function handleProcessQueue(request: Request) {
   try {
+    const adminToken = process.env.ADMIN_SESSION_TOKEN;
+    if (!adminToken) {
+      throw new Error("Missing required environment variable: ADMIN_SESSION_TOKEN");
+    }
+
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get("authorization");
 
@@ -18,7 +18,7 @@ async function handleProcessQueue(request: Request) {
 
     const cookieStore = await cookies();
     const adminSession = cookieStore.get("admin_session");
-    const isAdminAuthorized = Boolean(adminSession && adminSession.value === ADMIN_TOKEN);
+    const isAdminAuthorized = Boolean(adminSession && adminSession.value === adminToken);
 
     if (!isCronAuthorized && !isAdminAuthorized) {
       return NextResponse.json({ error: "Unauthorized cron invocation." }, { status: 401 });

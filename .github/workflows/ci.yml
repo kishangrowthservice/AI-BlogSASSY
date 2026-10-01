@@ -18,6 +18,13 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: dummy-service-key
+          ADMIN_PASSWORD: dummy-admin-password
+          ADMIN_SESSION_TOKEN: dummy-session-token
+          CRON_SECRET: dummy-cron-secret
 
 # NOTE: Automated verification scripts (scripts/verify_*.ts) are not included in CI yet.
 # They require live credentials for Supabase, Groq, and Gemini.
