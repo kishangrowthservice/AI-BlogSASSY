@@ -8,13 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { MiniAuthNav, MiniAuthFooter } from "@/components/navigation/MiniAuthNav";
 import { createClient } from "@/lib/supabase/client";
+import { autoConfirmUserAction } from "@/lib/serverActions";
 import {
   Mail,
   Lock,
   ArrowRight,
   AlertCircle,
   Loader2,
-  RefreshCw,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -23,8 +23,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showResend, setShowResend] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
 
   React.useEffect(() => {
     async function checkSession() {
@@ -44,10 +42,9 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    setShowResend(false);
-    setResendSuccess(false);
 
-    if (!email.trim() || !password.trim()) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password.trim()) {
       setErrorMessage("Please enter both email and password.");
       return;
     }
@@ -56,57 +53,52 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      let { data, error } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
         password: password,
       });
 
-      if (error) {
-        if (error.message.toLowerCase().includes("email not confirmed")) {
-          setErrorMessage("Your email has not been verified yet. Please check your inbox or resend the link below.");
-          setShowResend(true);
-        } else {
-          setErrorMessage(error.message);
+      // If user had unconfirmed email from a legacy signup, automatically confirm and retry
+      if (error && error.message.toLowerCase().includes("email not confirmed")) {
+        const autoConfirm = await autoConfirmUserAction(cleanEmail);
+        if (autoConfirm.success) {
+          const retryRes = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: password,
+          });
+          data = retryRes.data;
+          error = retryRes.error;
         }
+      }
+
+      if (error) {
+        setErrorMessage(error.message);
         setIsLoading(false);
         return;
       }
 
-      // Check where to route the user
       if (data.user) {
-        router.push("/dashboard");
+        // Route user to their existing site dashboard or onboarding if first time
+        try {
+          const { data: existingSite } = await supabase
+            .from("site_profiles")
+            .select("id")
+            .eq("user_id", data.user.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (existingSite?.id) {
+            router.replace(`/dashboard?siteId=${existingSite.id}`);
+          } else {
+            router.replace("/onboard");
+          }
+        } catch {
+          router.replace("/dashboard");
+        }
         router.refresh();
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "An error occurred during sign in.");
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendConfirmation = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const supabase = createClient();
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: email.trim(),
-        options: {
-          emailRedirectTo: redirectUrl,
-        },
-      });
-
-      if (error) {
-        setErrorMessage(error.message);
-      } else {
-        setResendSuccess(true);
-      }
-    } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to resend confirmation email.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -142,12 +134,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {resendSuccess && (
-                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-400">
-                    A new verification link has been sent to your email.
-                  </div>
-                )}
-
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5 text-indigo-400" />
@@ -159,6 +145,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                     className="bg-background/50 border-border/80 text-sm"
                   />
                 </div>
@@ -179,25 +166,10 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                     className="bg-background/50 border-border/80 text-sm font-mono"
                   />
                 </div>
-
-                {showResend && (
-                  <div className="pt-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleResendConfirmation}
-                      disabled={isLoading}
-                      className="w-full text-xs gap-1.5"
-                    >
-                      <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
-                      Resend Verification Email
-                    </Button>
-                  </div>
-                )}
               </CardContent>
 
               <CardFooter className="flex flex-col gap-3 border-t border-border/40 pt-4">

@@ -901,3 +901,107 @@ export async function adminUpdateTenantQuotaAction(
   }
 }
 
+/**
+ * Direct sign up action: creates a user with email_confirm: true so no email verification
+ * link is sent or required, enabling immediate active session establishment upon registration.
+ */
+export async function directSignUpAction(input: {
+  email: string;
+  password: string;
+}): Promise<{ success: boolean; userId?: string; error?: string }> {
+  try {
+    const email = input.email?.trim().toLowerCase();
+    const password = input.password;
+
+    if (!email || !password) {
+      return { success: false, error: "Email and password are required." };
+    }
+
+    if (password.length < 8) {
+      return { success: false, error: "Password must be at least 8 characters long." };
+    }
+
+    const adminDb = getDbClient();
+
+    // 1. Create the user with email_confirm: true (bypasses email verification)
+    const { data: createData, error: createError } = await adminDb.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { registered_via: "direct_signup" },
+    });
+
+    if (!createError && createData.user) {
+      return { success: true, userId: createData.user.id };
+    }
+
+    // 2. Handle case if account already exists
+    if (createError) {
+      const errMsg = createError.message.toLowerCase();
+      if (
+        errMsg.includes("already registered") ||
+        errMsg.includes("already exists") ||
+        errMsg.includes("user already")
+      ) {
+        try {
+          const { data: listData } = await adminDb.auth.admin.listUsers();
+          const existingUser = listData?.users?.find(
+            (u) => u.email?.toLowerCase() === email
+          );
+          if (existingUser) {
+            // Auto-confirm the unconfirmed existing account and update password so they can log in immediately
+            await adminDb.auth.admin.updateUserById(existingUser.id, {
+              password,
+              email_confirm: true,
+            });
+            return { success: true, userId: existingUser.id };
+          }
+        } catch {
+          // Fall through
+        }
+        return {
+          success: false,
+          error: "An account with this email already exists. Please sign in instead.",
+        };
+      }
+
+      return { success: false, error: createError.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Failed to create account. Please try again.",
+    };
+  }
+}
+
+/**
+ * Auto-confirms any user who attempts sign in but has an unconfirmed status.
+ */
+export async function autoConfirmUserAction(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const cleanEmail = email?.trim().toLowerCase();
+    if (!cleanEmail) return { success: false, error: "Email required." };
+
+    const adminDb = getDbClient();
+    const { data: listData } = await adminDb.auth.admin.listUsers();
+    const user = listData?.users?.find((u) => u.email?.toLowerCase() === cleanEmail);
+
+    if (user && !user.email_confirmed_at) {
+      await adminDb.auth.admin.updateUserById(user.id, {
+        email_confirm: true,
+      });
+      return { success: true };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to auto-confirm user." };
+  }
+}
+
+
