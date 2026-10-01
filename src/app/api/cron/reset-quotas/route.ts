@@ -16,9 +16,16 @@ async function handleResetQuotas(request: Request) {
 
     const isCronAuthorized = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
 
-    const cookieStore = await cookies();
-    const adminSession = cookieStore.get("admin_session");
-    const isAdminAuthorized = Boolean(adminSession && adminSession.value === adminToken);
+    let isAdminAuthorized = false;
+    if (!isCronAuthorized) {
+      try {
+        const cookieStore = await cookies();
+        const adminSession = cookieStore.get("admin_session");
+        isAdminAuthorized = Boolean(adminSession && adminSession.value === adminToken);
+      } catch {
+        isAdminAuthorized = false;
+      }
+    }
 
     if (!isCronAuthorized && !isAdminAuthorized) {
       return NextResponse.json({ error: "Unauthorized cron invocation." }, { status: 401 });

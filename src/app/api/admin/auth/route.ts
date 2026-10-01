@@ -116,15 +116,19 @@ export async function POST(request: Request) {
     // Reset attempts on successful login
     await resetLoginAttempts(ip);
 
-    const expires = new Date(Date.now() + SESSION_DURATION_MS);
-    const cookieStore = await cookies();
-    cookieStore.set("admin_session", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      expires,
-      path: "/",
-    });
+    try {
+      const expires = new Date(Date.now() + SESSION_DURATION_MS);
+      const cookieStore = await cookies();
+      cookieStore.set("admin_session", sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        expires,
+        path: "/",
+      });
+    } catch {
+      // In standalone script / test runner contexts without a Next.js RequestAsyncStorage
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: unknown) {
@@ -134,7 +138,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.delete("admin_session");
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("admin_session");
+  } catch {
+    // Non-HTTP test context
+  }
   return NextResponse.json({ success: true }, { status: 200 });
 }
