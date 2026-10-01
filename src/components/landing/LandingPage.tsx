@@ -58,16 +58,16 @@ const FAQ_ITEMS = [
     a: "No. Google's official search guidance is explicit: content quality and helpfulness matter, not how content is produced. Google rewards original, people-first content that answers user search intent, and penalizes thin or manipulative spam regardless of whether a human or AI wrote it. Our platform structures high-quality drafts adhering to Google E-E-A-T principles with authoritative headings and semantic metadata."
   },
   {
-    q: "How does the automated CMS webhook publishing work?",
-    a: "Whenever an article finishes generation, our platform can immediately dispatch the complete semantic HTML article directly to your endpoint via HTTP POST. It comes pre-formatted with titles, meta descriptions, image suggestions, and internal links ready for WordPress, Shopify, Webflow, Ghost, or your custom API, protected with cryptographic HMAC-SHA256 signatures."
+    q: "How does the automated publishing work?",
+    a: "Once your website is connected, each approved article is delivered directly to your blog — fully formatted and ready for your readers. You stay in control of when posts go live, and there's no manual copy-paste or extra steps involved. It's designed to fit seamlessly into the website setup you already have, so your team can focus on strategy and growth while we handle the publishing."
   },
   {
-    q: "What is dual-LLM fallback and why is it important?",
-    a: "Third-party AI providers experience traffic spikes and occasional rate limits. AI Blog SaaS uses Groq as the ultra-fast primary engine and automatically fails over to Google Gemini Flash if Groq is degraded. Your scheduled and queued posts continue without drops or delays."
+    q: "What happens if one of your AI providers is having issues?",
+    a: "We built reliability into the platform from day one. Your content is powered by multiple AI engines working behind the scenes. If one is temporarily unavailable or running slowly, another one instantly takes its place. From your perspective, nothing changes: your articles are still created, refined, and delivered on time, every time."
   },
   {
-    q: "Can I bring my own AI keys (BYO Keys)?",
-    a: "Yes! If you already have Groq or Google Gemini API accounts with free tier headroom or custom quotas, you can enter your keys securely in your client dashboard. The platform will route your generation through your private credentials while maintaining all brand voice and publishing automations."
+    q: "Can I use my own AI accounts?",
+    a: "Yes. If your team already has accounts with an AI provider, you can connect them directly to the platform and manage usage through your existing account. Prefer not to? No problem. Our built-in AI handles everything for you right out of the box, so you can launch without any additional setup."
   },
   {
     q: "How does canonical internal link injection work?",
@@ -521,7 +521,7 @@ console.log("Published:", article.title, article.url);`;
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Instant failover with zero dropped jobs</span>
+                  <span>Instant automatic AI backup</span>
                 </div>
               </CardContent>
             </Card>
@@ -569,11 +569,11 @@ console.log("Published:", article.title, article.url);`;
               <CardContent className="text-xs text-muted-foreground space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Clean semantic HTML ready for CMS paste</span>
+                  <span>Clean semantic formatting ready for CMS</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  <span>Automated publishing hooks available</span>
+                  <span>Automated publishing directly to your blog</span>
                 </div>
               </CardContent>
             </Card>
@@ -648,7 +648,7 @@ console.log("Published:", article.title, article.url);`;
                     <span className="text-xs font-normal text-muted-foreground">/mo</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    Includes automated SEO, brand voice, and CMS webhooks
+                    Includes automated SEO, brand voice, and automatic publishing
                   </p>
                 </div>
               </div>
@@ -743,7 +743,7 @@ console.log("Published:", article.title, article.url);`;
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Dual-LLM (Groq + Gemini) Failover</span>
+                <span>Always-On AI Reliability</span>
               </div>
             </CardContent>
             <CardFooter>
@@ -792,7 +792,7 @@ console.log("Published:", article.title, article.url);`;
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span>Outbound CMS Webhooks (WordPress/Shopify)</span>
+                  <span>Automatic Publishing to Your Website</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -836,11 +836,11 @@ console.log("Published:", article.title, article.url);`;
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>Full Webhook &amp; REST API Access</span>
+                <span>Flexible Integration Options</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>BYO Custom API Keys Support</span>
+                <span>Bring Your Own AI Account</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
