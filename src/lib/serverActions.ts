@@ -9,6 +9,7 @@ import { dispatchCmsWebhook, computeWebhookSignature } from "./webhookDispatcher
 import type { SiteProfile, GenerationLog, GenerateBlogParams, GeneratedBlogPost, GenerationTelemetry } from "./types";
 import { toSafeSiteProfile, type SafeSiteProfile } from "./sanitize";
 import type { OnboardTenantInput, OnboardTenantResult } from "./adminActions";
+import { runFullSiteCrawlAndSynthesis } from "./crawler/brandSynthesizer";
 
 async function verifyAdminAuth(): Promise<boolean> {
   const adminToken = process.env.ADMIN_SESSION_TOKEN;
@@ -340,6 +341,231 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       success: false,
       error: err?.message || "Failed to onboard site",
     };
+  }
+}
+
+/**
+ * 1-Field URL Onboarding: Instantly provisions a site profile from a website URL,
+ * redirects user immediately, and starts deep multi-page crawl + AI brand synthesis in background.
+ */
+export async function startSiteOnboardUrlAction(input: {
+  websiteUrl: string;
+  selectedPlan?: string | null;
+}): Promise<{ success: boolean; siteId?: string; error?: string }> {
+  try {
+    const rawUrl = input.websiteUrl?.trim();
+    if (!rawUrl) {
+      return { success: false, error: "Please enter your website URL." };
+    }
+
+    let normalizedUrl = rawUrl;
+    if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
+      normalizedUrl = "https://" + normalizedUrl;
+    }
+
+    let urlObj: URL;
+    try {
+      urlObj = new URL(normalizedUrl);
+    } catch {
+      return { success: false, error: "Invalid website URL format. Please include a valid domain (e.g. https://mybrand.com)." };
+    }
+
+    const domain = urlObj.hostname.replace(/^www\./, "").toLowerCase();
+    let initialSiteName = domain.split(".")[0];
+    initialSiteName = initialSiteName.charAt(0).toUpperCase() + initialSiteName.slice(1);
+
+    // Quick 2s prefetch for real site title if accessible
+    try {
+      const quickRes = await fetch(urlObj.origin, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+        signal: AbortSignal.timeout(2500),
+      });
+      if (quickRes.ok) {
+        const html = await quickRes.text();
+        const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (m && m[1]) {
+          const rawTitle = m[1].trim().split(/[|\-–]/)[0].trim();
+          if (rawTitle && rawTitle.length > 1 && rawTitle.length < 50) {
+            initialSiteName = rawTitle;
+          }
+        }
+      }
+    } catch {}
+
+    // Resolve authenticated user
+    let targetUserId: string | null = null;
+    try {
+      const serverAuth = await createSupabaseServerClient();
+      const { data: { user } } = await serverAuth.auth.getUser();
+      if (user?.id) targetUserId = user.id;
+    } catch {}
+
+    const selectedPlan = input.selectedPlan?.toLowerCase() || "starter";
+    const monthlyQuota = selectedPlan === "agency" ? 500 : selectedPlan === "pro" ? 250 : 100;
+
+    const payload: any = {
+      site_name: initialSiteName,
+      domain,
+      api_key_hash: null,
+      user_id: targetUserId,
+      is_active: true,
+      brand_knowledge: `Website analysis and deep crawling in progress for ${domain}...`,
+      tone: "authoritative, actionable, conversion-focused",
+      target_audience: "business decision makers and prospective clients",
+      internal_links: [],
+      monthly_quota: monthlyQuota,
+      used_quota: 0,
+      groq_model: "openai/gpt-oss-120b",
+      gemini_model: "gemini-2.5-flash-lite",
+      plan_tier: selectedPlan,
+      crawl_status: "in_progress",
+      crawl_progress: 10,
+      crawl_page_count: 1,
+      crawl_error: null,
+    };
+
+    let siteId: string | null = null;
+    try {
+      const db = getDbClient();
+      const { data, error } = await db
+        .from("site_profiles")
+        .insert([payload])
+        .select("id")
+        .single();
+
+      if (!error && data?.id) {
+        siteId = data.id;
+      }
+    } catch {}
+
+    if (!siteId) {
+      siteId = crypto.randomUUID();
+      localSiteProfiles.set(siteId, { id: siteId, ...payload, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    }
+
+    // Trigger deep crawling and AI brand synthesis asynchronously
+    runFullSiteCrawlAndSynthesis(siteId, urlObj.origin).catch((err) => {
+      console.error(`[startSiteOnboardUrlAction] Background crawl execution error for ${siteId}:`, err);
+    });
+
+    return {
+      success: true,
+      siteId,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err?.message || "Failed to initialize website onboarding.",
+    };
+  }
+}
+
+/**
+ * Checks crawl and brand intelligence progress for the live dashboard scanner widget.
+ */
+export async function getCrawlStatusAction(siteId: string): Promise<{
+  success: boolean;
+  crawl_status?: "idle" | "in_progress" | "completed" | "failed";
+  crawl_progress?: number;
+  crawl_page_count?: number;
+  crawl_error?: string | null;
+  site_name?: string;
+  domain?: string;
+  tone?: string;
+  target_audience?: string;
+  internal_links_count?: number;
+  error?: string;
+}> {
+  try {
+    if (!siteId) return { success: false, error: "Site ID is required" };
+
+    const db = getDbClient();
+    const { data, error } = await db
+      .from("site_profiles")
+      .select("crawl_status, crawl_progress, crawl_page_count, crawl_error, site_name, domain, tone, target_audience, internal_links")
+      .eq("id", siteId)
+      .single();
+
+    if (!error && data) {
+      return {
+        success: true,
+        crawl_status: data.crawl_status || "completed",
+        crawl_progress: data.crawl_progress ?? 100,
+        crawl_page_count: data.crawl_page_count ?? 0,
+        crawl_error: data.crawl_error,
+        site_name: data.site_name,
+        domain: data.domain,
+        tone: data.tone,
+        target_audience: data.target_audience,
+        internal_links_count: Array.isArray(data.internal_links) ? data.internal_links.length : 0,
+      };
+    }
+
+    const local = localSiteProfiles.get(siteId);
+    if (local) {
+      return {
+        success: true,
+        crawl_status: local.crawl_status || "completed",
+        crawl_progress: local.crawl_progress ?? 100,
+        crawl_page_count: local.crawl_page_count ?? 0,
+        crawl_error: local.crawl_error,
+        site_name: local.site_name,
+        domain: local.domain,
+        tone: local.tone,
+        target_audience: local.target_audience,
+        internal_links_count: local.internal_links?.length || 0,
+      };
+    }
+
+    return { success: false, error: "Site profile not found" };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to get crawl status" };
+  }
+}
+
+/**
+ * Allows tenant to manually trigger a fresh re-scan of their website anytime.
+ */
+export async function triggerRecrawlAction(siteId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!siteId) return { success: false, error: "Site ID is required" };
+
+    const isAuthorized = (await verifySiteOwnership(siteId)) || (await verifyAdminAuth());
+    if (!isAuthorized) {
+      return { success: false, error: "Unauthorized. Permission denied." };
+    }
+
+    const db = getDbClient();
+    const { data: site, error } = await db
+      .from("site_profiles")
+      .select("domain")
+      .eq("id", siteId)
+      .single();
+
+    const domain = site?.domain || localSiteProfiles.get(siteId)?.domain;
+    if (!domain) {
+      return { success: false, error: "Site domain not found." };
+    }
+
+    const targetUrl = domain.startsWith("http") ? domain : `https://${domain}`;
+
+    // Mark in_progress
+    await db.from("site_profiles").update({ crawl_status: "in_progress", crawl_progress: 10, crawl_error: null }).eq("id", siteId);
+    const local = localSiteProfiles.get(siteId);
+    if (local) {
+      local.crawl_status = "in_progress";
+      local.crawl_progress = 10;
+      local.crawl_error = undefined;
+    }
+
+    // Run async
+    runFullSiteCrawlAndSynthesis(siteId, targetUrl).catch((err) => {
+      console.error(`[triggerRecrawlAction] Background re-crawl error:`, err);
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to trigger re-crawl." };
   }
 }
 

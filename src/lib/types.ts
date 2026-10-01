@@ -26,6 +26,10 @@ export interface SiteProfile {
   stripe_subscription_id?: string | null;
   plan_tier?: "starter" | "pro" | "agency" | string;
   webhook_url?: string | null;
+  crawl_status?: "idle" | "in_progress" | "completed" | "failed";
+  crawl_progress?: number;
+  crawl_page_count?: number;
+  crawl_error?: string | null;
   created_at: string;
   updated_at: string;
 }

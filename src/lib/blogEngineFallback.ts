@@ -1,6 +1,7 @@
 import Groq from "groq-sdk";
 import { GoogleGenAI } from "@google/genai";
 import { buildBlogPostPrompt, blogPostResponseSchema, geminiBlogPostResponseSchema } from "./blogEngine";
+import { normalizeContentToHtml } from "./contentFormatter";
 import type { SiteProfile, GenerateBlogParams, GeneratedBlogPost, GeneratedBlogPostWithTelemetry, GenerationTelemetry } from "./types";
 
 let groqInstance: Groq | null = null;
@@ -47,10 +48,12 @@ function parseGeneratedJson(raw: string): GeneratedBlogPost {
     throw new Error("Response JSON missing required 'title' or 'content' fields");
   }
 
+  const formattedHtml = normalizeContentToHtml(String(parsed.content));
+
   return {
     title: String(parsed.title),
     metaDescription: String(parsed.metaDescription || ""),
-    content: String(parsed.content),
+    content: formattedHtml,
     suggestedTags: Array.isArray(parsed.suggestedTags)
       ? parsed.suggestedTags.map(String)
       : [],

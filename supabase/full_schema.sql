@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS site_profiles (
   byo_groq_api_key TEXT,
   byo_gemini_api_key TEXT,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  crawl_status TEXT NOT NULL DEFAULT 'completed',
+  crawl_progress INT NOT NULL DEFAULT 100,
+  crawl_page_count INT NOT NULL DEFAULT 0,
+  crawl_error TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

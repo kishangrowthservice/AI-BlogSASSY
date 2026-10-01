@@ -26,6 +26,7 @@ import type { SafeSiteProfile } from "@/lib/sanitize";
 import type { GenerationLog } from "@/lib/types";
 import { getPlanTier } from "@/lib/billing";
 import { TokenAnalyticsCard } from "./TokenAnalyticsCard";
+import { BrandCrawlerLiveCard } from "./BrandCrawlerLiveCard";
 
 interface OverviewTabProps {
   profile: SafeSiteProfile;
@@ -34,6 +35,7 @@ interface OverviewTabProps {
   onOpenGenerateModal: () => void;
   onNavigateTab: (tab: "articles" | "brand" | "automations" | "developer" | "billing") => void;
   onInspectLog: (log: GenerationLog) => void;
+  onProfileUpdated?: (updated: Partial<SafeSiteProfile>) => void;
 }
 
 export function OverviewTab({
@@ -43,6 +45,7 @@ export function OverviewTab({
   onOpenGenerateModal,
   onNavigateTab,
   onInspectLog,
+  onProfileUpdated = () => {},
 }: OverviewTabProps) {
   const currentPlan = getPlanTier(profile.plan_tier);
 
