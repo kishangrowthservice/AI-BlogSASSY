@@ -4,15 +4,14 @@ import React, { useState, useEffect } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardSidebar, type DashboardTab } from "@/components/dashboard/DashboardSidebar";
-import { OverviewTab } from "@/components/dashboard/OverviewTab";
-import { ArticlesTab } from "@/components/dashboard/ArticlesTab";
-import { BrandDnaTab } from "@/components/dashboard/BrandDnaTab";
-import { AutomationsTab } from "@/components/dashboard/AutomationsTab";
 import { DeveloperTab } from "@/components/dashboard/DeveloperTab";
+import { ApiPlaygroundTab } from "@/components/dashboard/ApiPlaygroundTab";
+import { ApiDocsTab } from "@/components/dashboard/ApiDocsTab";
 import { AiEnginesTab } from "@/components/dashboard/AiEnginesTab";
+import { UsageGraphsTab } from "@/components/dashboard/UsageGraphsTab";
+import { RequestLogsTab } from "@/components/dashboard/RequestLogsTab";
+import { WebhooksTab } from "@/components/dashboard/WebhooksTab";
 import { BillingTab } from "@/components/dashboard/BillingTab";
-import { GenerateArticleModal } from "@/components/dashboard/GenerateArticleModal";
-import { ArticlePreviewModal } from "@/components/dashboard/ArticlePreviewModal";
 import { KeyRevealModal } from "@/components/dashboard/KeyRevealModal";
 import { generateTenantApiKeyAction, type UserSiteSummary } from "@/lib/serverActions";
 import type { SafeSiteProfile } from "@/lib/sanitize";
@@ -37,17 +36,14 @@ export function TenantDashboardClient({
   const [userSites, setUserSites] = useState<UserSiteSummary[]>(initialUserSites);
   const [keyPrefix, setKeyPrefix] = useState<string | null>(initialKeyPrefix);
   const [logs, setLogs] = useState<GenerationLog[]>(initialLogs);
-  const [currentTab, setCurrentTab] = useState<DashboardTab>("overview");
+  const [currentTab, setCurrentTab] = useState<DashboardTab>("usage-graphs");
   const [apiOrigin, setApiOrigin] = useState("https://api.growthservice.in");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Modals state
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [revealedRawKey, setRevealedRawKey] = useState<string | null>(null);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
-  const [inspectedLog, setInspectedLog] = useState<GenerationLog | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Sync API origin and check query params for tab or upgrade notice
   useEffect(() => {
@@ -60,8 +56,8 @@ export function TenantDashboardClient({
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab") as DashboardTab;
-      if (tabParam && ["overview", "articles", "brand", "automations", "developer", "ai-engines", "billing"].includes(tabParam)) {
-        setCurrentTab(tabParam);
+      if (tabParam && ["developer", "api-playground", "ai-engines", "api-docs", "webhooks", "usage-graphs", "request-logs", "billing"].includes(tabParam)) {
+        setCurrentTab(tabParam as DashboardTab);
       }
       if (params.get("upgrade") === "success") {
         setCurrentTab("billing");
@@ -91,38 +87,18 @@ export function TenantDashboardClient({
     }
   };
 
-  // Article Generated Callback
-  const handleArticleGenerated = (
-    post: GeneratedBlogPost,
-    telemetry: GenerationTelemetry,
-    newLog: GenerationLog
-  ) => {
-    setProfile((prev) => ({
-      ...prev,
-      used_quota: (prev.used_quota || 0) + 1,
-    }));
-    setLogs((prev) => [newLog, ...prev]);
-  };
-
-  // Open Article Preview
-  const handleInspectLog = (log: GenerationLog) => {
-    setInspectedLog(log);
-    setShowPreviewModal(true);
-  };
-
   const handleTabChange = (tab: DashboardTab) => {
     setCurrentTab(tab);
     setMobileMenuOpen(false);
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
+    <div className="h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">
       {/* Top Application Header */}
       <DashboardHeader
         profile={profile}
         userSites={userSites}
         currentUserEmail={currentUserEmail}
-        onOpenGenerateModal={() => setShowGenerateModal(true)}
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
       />
 
@@ -135,7 +111,7 @@ export function TenantDashboardClient({
           profile={profile}
           articlesCount={logs.length}
           onOpenUpgradeModal={() => setCurrentTab("billing")}
-          className="hidden md:flex min-h-[calc(100vh-4rem)]"
+          className="hidden md:flex h-full overflow-y-auto"
         />
 
         {/* Mobile Navigation Drawer */}
@@ -157,40 +133,6 @@ export function TenantDashboardClient({
 
         {/* Content Workspace Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          {currentTab === "overview" && (
-            <OverviewTab
-              profile={profile}
-              logs={logs}
-              keyPrefix={keyPrefix}
-              onOpenGenerateModal={() => setShowGenerateModal(true)}
-              onNavigateTab={(tab) => setCurrentTab(tab)}
-              onInspectLog={handleInspectLog}
-            />
-          )}
-
-          {currentTab === "articles" && (
-            <ArticlesTab
-              logs={logs}
-              onOpenGenerateModal={() => setShowGenerateModal(true)}
-              onInspectLog={handleInspectLog}
-            />
-          )}
-
-          {currentTab === "brand" && (
-            <BrandDnaTab
-              profile={profile}
-              onProfileUpdated={handleProfileUpdated}
-            />
-          )}
-
-          {currentTab === "automations" && (
-            <AutomationsTab
-              profile={profile}
-              keyPrefix={keyPrefix}
-              onProfileUpdated={handleProfileUpdated}
-            />
-          )}
-
           {currentTab === "developer" && (
             <DeveloperTab
               profile={profile}
@@ -201,8 +143,32 @@ export function TenantDashboardClient({
             />
           )}
 
+          {currentTab === "api-playground" && (
+            <ApiPlaygroundTab
+              profile={profile}
+              apiOrigin={apiOrigin}
+              keyPrefix={keyPrefix}
+            />
+          )}
+
           {currentTab === "ai-engines" && (
             <AiEnginesTab profile={profile} logs={logs} />
+          )}
+
+          {currentTab === "api-docs" && (
+            <ApiDocsTab apiOrigin={apiOrigin} />
+          )}
+
+          {currentTab === "webhooks" && (
+            <WebhooksTab profile={profile} />
+          )}
+
+          {currentTab === "usage-graphs" && (
+            <UsageGraphsTab profile={profile} logs={logs} />
+          )}
+
+          {currentTab === "request-logs" && (
+            <RequestLogsTab logs={logs} />
           )}
 
           {currentTab === "billing" && (
@@ -210,20 +176,6 @@ export function TenantDashboardClient({
           )}
         </main>
       </div>
-
-      {/* Global Modals */}
-      <GenerateArticleModal
-        open={showGenerateModal}
-        onOpenChange={setShowGenerateModal}
-        siteId={profile.id}
-        onArticleGenerated={handleArticleGenerated}
-      />
-
-      <ArticlePreviewModal
-        log={inspectedLog}
-        open={showPreviewModal}
-        onOpenChange={setShowPreviewModal}
-      />
 
       <KeyRevealModal
         rawKey={revealedRawKey}

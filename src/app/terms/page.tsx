@@ -1,42 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { MiniAuthNav, MiniAuthFooter } from "@/components/navigation/MiniAuthNav";
-import { FileText, AlertTriangle, ScrollText, Scale, Ban, CreditCard, ShieldAlert } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service (Draft) | AI Blog SaaS",
-  description: "Terms of Service draft placeholder for AI Blog SaaS. Pending formal legal review — not yet enforceable.",
+  title: "Terms of Service | AI Blog SaaS",
+  description: "Terms of Service for AI Blog SaaS API.",
 };
-
-const SECTIONS = [
-  {
-    icon: <ScrollText className="h-4 w-4 text-indigo-400" />,
-    title: "1. Acceptance of Terms",
-    body: "By creating an account on AI Blog SaaS, you acknowledge that you have read, understood, and agree to be bound by the final published version of these terms once they are formally approved and released. Until then, usage of the platform during any early-access or beta period is governed solely by any explicit agreement made at sign-up.",
-  },
-  {
-    icon: <Scale className="h-4 w-4 text-purple-400" />,
-    title: "2. Permitted Use & License",
-    body: "AI Blog SaaS grants you a limited, non-exclusive, non-transferable license to access and use the platform for your legitimate business content operations. The platform may not be used to generate spam, disinformation, CSAM, or content that violates applicable law. API keys and platform credentials are personal to your account and must not be shared.",
-  },
-  {
-    icon: <Ban className="h-4 w-4 text-rose-400" />,
-    title: "3. Prohibited Activities",
-    body: "You may not reverse-engineer, resell, or sublicense access to the platform. Automated scraping or abuse of the generation API outside documented rate limits is prohibited. Violation of these rules may result in account suspension without refund.",
-  },
-  {
-    icon: <CreditCard className="h-4 w-4 text-amber-400" />,
-    title: "4. Billing & Quotas",
-    body: "Subscription plans are subject to monthly generation quotas documented on the pricing page. Overages are not currently charged but may be throttled. Billing terms, refund policies, and plan cancellation procedures will be fully specified in the final version of these terms.",
-  },
-  {
-    icon: <ShieldAlert className="h-4 w-4 text-orange-400" />,
-    title: "5. Limitation of Liability",
-    body: "The platform is provided \"as-is\" during early access. AI Blog SaaS makes no warranties regarding uninterrupted availability or content accuracy. Specific liability limitations, indemnification clauses, and governing law jurisdiction will be articulated in the final terms pending legal review.",
-  },
-];
 
 export default function TermsPage() {
   return (
@@ -47,59 +17,80 @@ export default function TermsPage() {
         </Link>
       } />
 
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-2xl space-y-4">
-
-          {/* Draft Banner */}
-          <div className="flex items-center gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-            <p className="text-xs text-amber-300 leading-relaxed">
-              <strong className="text-amber-200">Draft Placeholder — Not Yet Enforceable.</strong>{" "}
-              This document is for link-resolution purposes only. Final Terms of Service are pending qualified legal review and have not yet been published. By using the platform now you acknowledge this limitation.
+      <main className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-8 lg:p-12">
+        <article className="prose prose-sm sm:prose-base prose-invert max-w-none text-muted-foreground">
+          <div className="mb-10 text-center space-y-4">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground m-0">
+              Terms of Service
+            </h1>
+            <p className="text-sm">
+              <strong>Note:</strong> This is a boilerplate legal template provided for demonstration. 
+              Before using this in production, consult a legal professional.
             </p>
+            <p className="text-sm">Last Updated: October 2026</p>
           </div>
 
-          <Card className="border-border/80 bg-card/60 backdrop-blur-2xl shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                <FileText className="h-6 w-6 text-indigo-400" />
-                Terms of Service
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Last updated: {new Date().toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })} (Draft — Pending Legal Review)
-              </CardDescription>
-            </CardHeader>
+          <h2 className="text-foreground">1. Acceptance of Terms</h2>
+          <p>
+            By accessing and using the AI Blog SaaS API and platform (collectively, the &quot;Service&quot;), 
+            you accept and agree to be bound by the terms and provision of this agreement. 
+            In addition, when using these particular services, you shall be subject to any posted 
+            guidelines or rules applicable to such services.
+          </p>
 
-            <CardContent className="space-y-5">
-              {SECTIONS.map((section) => (
-                <div key={section.title} className="space-y-1.5 border-b border-border/40 last:border-0 pb-4 last:pb-0">
-                  <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                    {section.icon}
-                    {section.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                    {section.body}
-                  </p>
-                </div>
-              ))}
+          <h2 className="text-foreground">2. Description of Service</h2>
+          <p>
+            AI Blog SaaS provides an autonomous AI-driven blog generation API, allowing developers 
+            and businesses to programmatically generate search-optimized, brand-aligned content. 
+            The Service includes API access, usage dashboards, and automated website crawlers.
+          </p>
 
-              <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs text-muted-foreground">
-                <strong className="text-foreground">Questions?</strong> Contact us at{" "}
-                <span className="font-mono text-foreground">support@growthservice.in</span> for any legal
-                inquiries or service questions during the interim period.
-              </div>
-            </CardContent>
+          <h2 className="text-foreground">3. API Usage and Rate Limiting</h2>
+          <p>
+            You agree to access the API only using the authentication credentials provided to you. 
+            You are responsible for keeping your API key confidential. Your use of the API is subject 
+            to rate limits and monthly quotas as determined by your subscription tier. We reserve 
+            the right to throttle, suspend, or terminate your access if your usage constitutes 
+            a Denial of Service, or otherwise disrupts the infrastructure for other tenants.
+          </p>
 
-            <CardFooter className="border-t border-border/40 pt-4 flex items-center justify-between text-xs">
-              <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                ← Back to Home
-              </Link>
-              <Link href="/privacy" className="text-indigo-400 hover:underline">
-                View Privacy Policy (Draft) →
-              </Link>
-            </CardFooter>
-          </Card>
-        </div>
+          <h2 className="text-foreground">4. Acceptable Use Policy</h2>
+          <p>
+            You agree not to use the Service to generate, distribute, or promote:
+          </p>
+          <ul>
+            <li>Spam, bulk unsolicited content, or SEO link-farming networks.</li>
+            <li>Content that violates intellectual property rights.</li>
+            <li>Defamatory, discriminatory, or illegal material.</li>
+            <li>Malicious code or attempts to exploit vulnerabilities.</li>
+          </ul>
+
+          <h2 className="text-foreground">5. Billing and Payments</h2>
+          <p>
+            The Service is billed on a subscription basis. You will be billed in advance on a recurring 
+            and periodic basis. In the event of a billing failure, your API access will be suspended 
+            until payment is successfully processed. All fees are non-refundable unless otherwise 
+            required by law.
+          </p>
+
+          <h2 className="text-foreground">6. Limitation of Liability</h2>
+          <p>
+            In no event shall AI Blog SaaS, nor its directors, employees, partners, agents, suppliers, 
+            or affiliates, be liable for any indirect, incidental, special, consequential or punitive 
+            damages, including without limitation, loss of profits, data, use, goodwill, or other 
+            intangible losses, resulting from (i) your access to or use of or inability to access or 
+            use the Service; (ii) any content obtained from the Service; and (iii) unauthorized access, 
+            use or alteration of your transmissions or content.
+          </p>
+
+          <h2 className="text-foreground">7. Changes to Terms</h2>
+          <p>
+            We reserve the right, at our sole discretion, to modify or replace these Terms at any time. 
+            If a revision is material, we will try to provide at least 30 days&apos; notice prior to any 
+            new terms taking effect.
+          </p>
+
+        </article>
       </main>
 
       <MiniAuthFooter />

@@ -2,6 +2,7 @@
 
 import crypto from "crypto";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { getDbClient, hashApiKey, localSiteProfiles, reserveTenantQuota, releaseTenantQuota, recordGenerationLog } from "./db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateBlogPostResilient } from "./blogEngineFallback";
@@ -113,7 +114,7 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
       monthly_quota: input.monthly_quota && input.monthly_quota > 0 ? input.monthly_quota : 100,
       used_quota: 0,
       groq_model: input.groq_model || "openai/gpt-oss-120b",
-      gemini_model: input.gemini_model || "gemini-3.8-flash",
+      gemini_model: input.gemini_model || "gemini-3.1-pro-preview",
       byo_groq_api_key: input.byo_groq_api_key?.trim() || undefined,
       byo_gemini_api_key: input.byo_gemini_api_key?.trim() || undefined,
     };
@@ -155,6 +156,37 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
     const message = err instanceof Error ? err.message : "Failed to onboard tenant";
     console.error("[serverActions] onboardTenant error:", err);
     return { success: false, error: message };
+  }
+}
+
+/**
+ * Update the webhook URL for a tenant workspace.
+ */
+export async function updateWebhookUrlAction(
+  siteId: string,
+  webhookUrl: string | null
+): Promise<boolean> {
+  const isAuthorized = (await verifyAdminAuth()) || (await verifySiteOwnership(siteId));
+  if (!isAuthorized) {
+    return false;
+  }
+
+  try {
+    const supabase = getDbClient();
+    const { error } = await supabase
+      .from("site_profiles")
+      .update({ webhook_url: webhookUrl ? webhookUrl.trim() : null })
+      .eq("id", siteId);
+
+    if (error) throw error;
+    
+    // Invalidate nextjs cache to refetch site profile if needed
+    revalidatePath("/dashboard");
+    revalidatePath("/admin");
+    return true;
+  } catch (err) {
+    console.error("[serverActions] updateWebhookUrlAction error:", err);
+    return false;
   }
 }
 
@@ -304,7 +336,7 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       monthly_quota: 25, // Starter free quota
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-3.8-flash",
+      gemini_model: "gemini-3.1-pro-preview",
     };
 
     const supabase = getDbClient();
@@ -416,7 +448,7 @@ export async function startSiteOnboardUrlAction(input: {
       monthly_quota: monthlyQuota,
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-3.8-flash",
+      gemini_model: "gemini-3.1-pro-preview",
       plan_tier: selectedPlan,
       crawl_status: "in_progress",
       crawl_progress: 10,
@@ -723,10 +755,16 @@ export async function getTenantDashboardData(siteId: string): Promise<TenantDash
     // Resolve key prefix: stored prefix OR fallback masked indicator if api_key_hash exists
     const resolvedPrefix = profile.key_prefix || (profile.api_key_hash ? "gs_live_••••active" : null);
 
+    // Merge live crawl state if active, so the dashboard starts polling immediately
+    const liveCrawl = liveCrawlState.get(siteId);
+    
     // Sanitize: Never expose api_key_hash or BYO keys to client
     const safeProfile = toSafeSiteProfile({
       ...profile,
       key_prefix: resolvedPrefix,
+      crawl_status: liveCrawl?.crawl_status || profile.crawl_status,
+      crawl_progress: liveCrawl?.crawl_progress ?? profile.crawl_progress,
+      crawl_page_count: liveCrawl?.crawl_page_count ?? profile.crawl_page_count,
     });
 
     return {

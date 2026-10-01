@@ -9,7 +9,10 @@ import {
   Key,
   Cpu,
   CreditCard,
+  BookOpen,
+  List,
   Zap,
+  Webhook,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -17,12 +20,13 @@ import type { SafeSiteProfile } from "@/lib/sanitize";
 import { getPlanTier } from "@/lib/billing";
 
 export type DashboardTab =
-  | "overview"
-  | "articles"
-  | "brand"
-  | "automations"
   | "developer"
+  | "api-playground"
   | "ai-engines"
+  | "api-docs"
+  | "webhooks"
+  | "usage-graphs"
+  | "request-logs"
   | "billing";
 
 interface DashboardSidebarProps {
@@ -60,52 +64,56 @@ export function DashboardSidebar({
 
   const sections: NavSection[] = [
     {
-      title: "Content Studio",
+      title: "Monitoring",
       items: [
         {
-          id: "overview",
-          label: "Overview",
+          id: "usage-graphs",
+          label: "Usage & Rate Limits",
           icon: LayoutDashboard,
         },
         {
-          id: "articles",
-          label: "Articles & Studio",
-          icon: FileText,
-          badge: articlesCount > 0 ? articlesCount : undefined,
+          id: "request-logs",
+          label: "Request Logs",
+          icon: List,
         },
       ],
     },
     {
-      title: "Intelligence & Sync",
+      title: "API Platform",
       items: [
-        {
-          id: "brand",
-          label: "Brand DNA & Links",
-          icon: Sliders,
-        },
-        {
-          id: "automations",
-          label: "CMS Publishing",
-          icon: Share2,
-        },
-      ],
-    },
-    {
-      title: "Configuration",
-      items: [
-        {
-          id: "ai-engines",
-          label: "AI Providers",
-          icon: Cpu,
-        },
         {
           id: "developer",
-          label: "API & Developers",
+          label: "API Keys & Hub",
           icon: Key,
         },
         {
+          id: "api-playground",
+          label: "API Playground",
+          icon: Zap,
+        },
+        {
+          id: "ai-engines",
+          label: "AI Engines & BYOK",
+          icon: Cpu,
+        },
+        {
+          id: "api-docs",
+          label: "API Documentation",
+          icon: BookOpen,
+        },
+        {
+          id: "webhooks",
+          label: "Webhooks",
+          icon: Webhook,
+        },
+      ],
+    },
+    {
+      title: "Account",
+      items: [
+        {
           id: "billing",
-          label: "Billing & Plans",
+          label: "Billing & Quota",
           icon: CreditCard,
         },
       ],
@@ -114,7 +122,7 @@ export function DashboardSidebar({
 
   return (
     <aside
-      className={`flex flex-col justify-between border-r border-border/50 bg-card/20 backdrop-blur-xl p-4 w-64 shrink-0 ${className}`}
+      className={`flex flex-col justify-between border-r border-border/60 bg-background/95 p-4 w-64 shrink-0 ${className}`}
     >
       {/* Top: Grouped Navigation */}
       <div className="space-y-6">
@@ -131,16 +139,16 @@ export function DashboardSidebar({
                   <button
                     key={item.id}
                     onClick={() => onTabChange(item.id)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`group w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       isActive
-                        ? "bg-primary/10 text-primary font-semibold shadow-xs"
-                        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                        ? "bg-muted text-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Icon
                         className={`h-4 w-4 transition-colors ${
-                          isActive ? "text-primary" : "text-muted-foreground"
+                          isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
                         }`}
                       />
                       <span>{item.label}</span>

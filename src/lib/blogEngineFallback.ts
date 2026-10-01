@@ -1,5 +1,5 @@
 import Groq from "groq-sdk";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { buildBlogPostPrompt, blogPostResponseSchema, geminiBlogPostResponseSchema } from "./blogEngine";
 import { normalizeContentToHtml } from "./contentFormatter";
 import type { SiteProfile, GenerateBlogParams, GeneratedBlogPost, GeneratedBlogPostWithTelemetry, GenerationTelemetry } from "./types";
@@ -141,6 +141,12 @@ async function generateWithGemini(
       responseMimeType: "application/json",
       responseSchema: geminiBlogPostResponseSchema,
       temperature: 0.7,
+      // Gemini 3.x: thinkingConfig.thinkingLevel controls reasoning depth
+      // ThinkingLevel.HIGH = deepest reasoning — best output quality for long-form blog posts
+      thinkingConfig: {
+        thinkingLevel: ThinkingLevel.HIGH,
+        includeThoughts: false, // Keep thoughts out of the response text
+      },
     },
   });
 
@@ -179,7 +185,7 @@ export async function generateBlogPostResilient(
 ): Promise<GeneratedBlogPostWithTelemetry> {
   const prompt = buildBlogPostPrompt(siteProfile, params);
   const groqModel = params.model || siteProfile.groq_model || "openai/gpt-oss-120b";
-  const geminiModel = siteProfile.gemini_model || "gemini-3.8-flash";
+  const geminiModel = siteProfile.gemini_model || "gemini-3.1-pro-preview";
 
   // Support explicit Gemini fallback or default provider override
   const preferGemini =

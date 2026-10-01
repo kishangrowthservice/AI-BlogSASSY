@@ -22,7 +22,6 @@ interface DashboardHeaderProps {
   profile: SafeSiteProfile;
   userSites: UserSiteSummary[];
   currentUserEmail?: string | null;
-  onOpenGenerateModal: () => void;
   onOpenMobileMenu?: () => void;
 }
 
@@ -30,13 +29,12 @@ export function DashboardHeader({
   profile,
   userSites,
   currentUserEmail,
-  onOpenGenerateModal,
   onOpenMobileMenu,
 }: DashboardHeaderProps) {
   const currentPlan = getPlanTier(profile.plan_tier);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Left: Mobile Toggle + Logo + Site Switcher */}
         <div className="flex items-center gap-3">
@@ -127,14 +125,17 @@ export function DashboardHeader({
 
         {/* Right: Quick Action + Plan Badge + Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quick Action: Generate Post */}
+          {/* Quick Action: API Docs */}
           <Button
             size="sm"
-            onClick={onOpenGenerateModal}
-            className="h-8 px-3 text-xs font-semibold gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-sm shadow-purple-500/20"
+            asChild
+            variant="outline"
+            className="hidden sm:flex h-8 px-3 text-xs font-semibold gap-1.5 border-border/60 hover:bg-muted"
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-            <span className="hidden xs:inline">Generate Post</span>
+            <Link href="https://github.com/kishangrowthservice/AI-BlogSASSY" target="_blank">
+              <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+              <span>API Reference</span>
+            </Link>
           </Button>
 
           {/* Plan Badge */}
@@ -165,12 +166,6 @@ export function DashboardHeader({
                 <Link href="/docs" target="_blank" className="flex items-center gap-2">
                   <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
                   API Documentation
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer text-xs">
-                <Link href="/preview" className="flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                  Live Preview Studio
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
