@@ -13,13 +13,21 @@ export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
 
-    if (webhookSecret && signature) {
+    if (webhookSecret) {
+      if (!signature) {
+        return NextResponse.json({ error: "Missing stripe-signature header." }, { status: 400 });
+      }
       const Stripe = (await import("stripe")).default;
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
         apiVersion: "2025-02-24.acacia" as any,
       });
 
       event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    } else if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Stripe webhook secret is not configured in production environment." },
+        { status: 500 }
+      );
     } else {
       // In local development or testing without webhook secrets
       event = JSON.parse(rawBody);

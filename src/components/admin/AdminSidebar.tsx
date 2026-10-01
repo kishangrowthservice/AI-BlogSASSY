@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import {
   LayoutDashboard,
   Building2,
@@ -41,11 +41,6 @@ interface NavItem {
 }
 
 const mainNav: NavItem[] = [
-  {
-    title: "Overview",
-    href: "/admin",
-    icon: LayoutDashboard,
-  },
   {
     title: "Tenants & Sites",
     href: "/admin?tab=tenants",
@@ -89,8 +84,26 @@ const infraNav: NavItem[] = [
   },
 ]
 
-export function AdminSidebar({ className }: { className?: string }) {
+interface AdminSidebarProps {
+  className?: string
+  onNavigate?: () => void
+}
+
+export function AdminSidebar({ className, onNavigate }: AdminSidebarProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const currentTab = searchParams ? searchParams.get("tab") || "tenants" : "tenants"
+
+  const isItemActive = (href: string) => {
+    if (href.startsWith("/preview")) {
+      return pathname.startsWith("/preview")
+    }
+    if (href.includes("?tab=")) {
+      const targetTab = href.split("?tab=")[1]
+      return pathname === "/admin" && currentTab === targetTab
+    }
+    return pathname === href && currentTab === "tenants"
+  }
 
   return (
     <aside
@@ -161,11 +174,12 @@ export function AdminSidebar({ className }: { className?: string }) {
           <nav className="space-y-1">
             {mainNav.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href
+              const isActive = isItemActive(item.href)
               return (
                 <Link
                   key={item.title}
                   href={item.href}
+                  onClick={onNavigate}
                   className={cn(
                     "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors group",
                     isActive
@@ -203,14 +217,26 @@ export function AdminSidebar({ className }: { className?: string }) {
           <nav className="space-y-1">
             {infraNav.map((item) => {
               const Icon = item.icon
+              const isActive = isItemActive(item.href)
               return (
                 <Link
                   key={item.title}
                   href={item.href}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors group"
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors group",
+                    isActive
+                      ? "bg-secondary text-foreground font-semibold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-transform group-hover:scale-110" />
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 transition-transform group-hover:scale-110",
+                        isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                      )}
+                    />
                     <span>{item.title}</span>
                   </div>
                 </Link>

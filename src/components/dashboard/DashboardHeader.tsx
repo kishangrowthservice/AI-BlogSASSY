@@ -132,9 +132,9 @@ export function DashboardHeader({
             variant="outline"
             className="hidden sm:flex h-8 px-3 text-xs font-semibold gap-1.5 border-border/60 hover:bg-muted"
           >
-            <Link href="https://github.com/kishangrowthservice/AI-BlogSASSY" target="_blank">
+            <Link href="/docs" target="_blank">
               <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-              <span>API Reference</span>
+              <span>API Documentation</span>
             </Link>
           </Button>
 

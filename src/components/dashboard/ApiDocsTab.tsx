@@ -81,8 +81,8 @@ export function ApiDocsTab({ apiOrigin }: { apiOrigin: string }) {
             {/* Request Body parameters */}
             <div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">Request Body Parameters</h3>
-              <div className="border border-border/60 rounded-lg overflow-hidden">
-                <table className="w-full text-sm text-left">
+              <div className="border border-border/60 rounded-lg overflow-x-auto">
+                <table className="w-full text-sm text-left min-w-[500px]">
                   <thead className="bg-muted/50 text-muted-foreground border-b border-border/60">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Parameter</th>
@@ -94,17 +94,22 @@ export function ApiDocsTab({ apiOrigin }: { apiOrigin: string }) {
                     <tr className="bg-background/40">
                       <td className="px-4 py-3 font-mono text-indigo-300">topic <span className="text-rose-400 ml-1">*</span></td>
                       <td className="px-4 py-3 font-mono text-muted-foreground">string</td>
-                      <td className="px-4 py-3 text-muted-foreground">The subject matter of the blog post.</td>
+                      <td className="px-4 py-3 text-muted-foreground">The subject matter or headline of the blog post.</td>
+                    </tr>
+                    <tr className="bg-background/40">
+                      <td className="px-4 py-3 font-mono text-indigo-300">keywords</td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground">string[]</td>
+                      <td className="px-4 py-3 text-muted-foreground">Array of target SEO keywords to weave into headers and paragraphs.</td>
                     </tr>
                     <tr className="bg-background/40">
                       <td className="px-4 py-3 font-mono text-indigo-300">wordCount</td>
                       <td className="px-4 py-3 font-mono text-muted-foreground">number</td>
-                      <td className="px-4 py-3 text-muted-foreground">Approximate length. Default is 500.</td>
+                      <td className="px-4 py-3 text-muted-foreground">Target length between 300 and 3000 words. Default is 1000.</td>
                     </tr>
                     <tr className="bg-background/40">
-                      <td className="px-4 py-3 font-mono text-indigo-300">sync</td>
+                      <td className="px-4 py-3 font-mono text-indigo-300">async</td>
                       <td className="px-4 py-3 font-mono text-muted-foreground">boolean</td>
-                      <td className="px-4 py-3 text-muted-foreground">If true, waits for generation to complete (up to 30s). If false, adds to background queue. Default is false.</td>
+                      <td className="px-4 py-3 text-muted-foreground">If true, returns HTTP 202 and processes in background queue with webhook delivery. Default false (synchronous).</td>
                     </tr>
                   </tbody>
                 </table>

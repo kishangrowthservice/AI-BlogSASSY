@@ -84,7 +84,6 @@ export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [calculatorArticles, setCalculatorArticles] = useState(50);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
-  const [copiedSnippet, setCopiedSnippet] = useState(false);
 
   React.useEffect(() => {
     try {
@@ -108,14 +107,6 @@ export function LandingPage({ currentUserEmail }: LandingPageProps = {}) {
       // Browser fallback
     }
   }, [currentUserEmail]);
-
-  const integrationSnippet = `// 1-Click Publishing to Your Website
-const article = await blogEngine.publish({
-  topic: "10 High-Impact Ways Modern Businesses Scale Organic Traffic",
-  category: "Growth & Marketing"
-});
-
-console.log("Published:", article.title, article.url);`;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/20 selection:text-primary">

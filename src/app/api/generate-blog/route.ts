@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     };
 
     // 4.5. Async Queue for Burst Smoothing (§8 Scaling Strategy)
-    if (body?.async === true) {
+    if (body?.async === true || body?.sync === false) {
       const job = await enqueueGenerationJob(siteProfile.id, safeParams);
       return NextResponse.json(
         {

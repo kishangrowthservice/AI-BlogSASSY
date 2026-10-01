@@ -26,6 +26,7 @@ interface BillingTabProps {
 export function BillingTab({ profile }: BillingTabProps) {
   const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   const currentPlan = getPlanTier(profile.plan_tier);
   const quotaPercent = Math.min(
@@ -35,6 +36,7 @@ export function BillingTab({ profile }: BillingTabProps) {
 
   const handleUpgrade = async (planId: string) => {
     setUpgradingPlan(planId);
+    setBillingError(null);
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
@@ -44,9 +46,12 @@ export function BillingTab({ profile }: BillingTabProps) {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        setBillingError(data.error);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Upgrade checkout failed:", err);
+      setBillingError(err?.message || "Failed to initiate checkout");
     } finally {
       setUpgradingPlan(null);
     }
@@ -54,6 +59,7 @@ export function BillingTab({ profile }: BillingTabProps) {
 
   const handleOpenPortal = async () => {
     setIsLoadingPortal(true);
+    setBillingError(null);
     try {
       const res = await fetch("/api/billing/portal", {
         method: "POST",
@@ -63,9 +69,12 @@ export function BillingTab({ profile }: BillingTabProps) {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        setBillingError(data.error);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Customer portal launch failed:", err);
+      setBillingError(err?.message || "Failed to launch billing portal");
     } finally {
       setIsLoadingPortal(false);
     }
@@ -73,6 +82,12 @@ export function BillingTab({ profile }: BillingTabProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
+      {billingError && (
+        <div className="flex items-center gap-2.5 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 p-3.5 rounded-xl">
+          <ShieldCheck className="h-4 w-4 text-rose-400 shrink-0" />
+          <span>{billingError}</span>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

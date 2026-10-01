@@ -70,6 +70,7 @@ import {
   CheckCircle2,
   ShieldAlert,
   Flame,
+  Gauge,
 } from "lucide-react";
 
 interface Props {
@@ -167,7 +168,7 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab");
-      if (tabParam && ["tenants", "logs", "circuits", "queue", "apikeys"].includes(tabParam)) {
+      if (tabParam && ["tenants", "logs", "circuits", "queue", "apikeys", "ratelimits"].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     };
@@ -376,30 +377,34 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         {/* Navigation Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/70 pb-3">
-          <TabsList className="bg-muted/40 p-1 border border-border/60">
-            <TabsTrigger value="tenants" className="gap-2 text-xs font-medium">
+          <TabsList className="bg-muted/40 p-1 border border-border/60 overflow-x-auto flex-nowrap scrollbar-none max-w-full justify-start">
+            <TabsTrigger value="tenants" className="gap-2 text-xs font-medium whitespace-nowrap">
               <Building2 className="h-3.5 w-3.5" />
               <span>Tenants</span>
               <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">
                 {profiles.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="gap-2 text-xs font-medium">
+            <TabsTrigger value="logs" className="gap-2 text-xs font-medium whitespace-nowrap">
               <Activity className="h-3.5 w-3.5" />
               <span>Observability Logs</span>
               <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0">
                 {stats.recentLogs.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="queue" className="gap-2 text-xs font-medium">
+            <TabsTrigger value="queue" className="gap-2 text-xs font-medium whitespace-nowrap">
               <Clock className="h-3.5 w-3.5" />
               <span>Async Queue</span>
             </TabsTrigger>
-            <TabsTrigger value="circuits" className="gap-2 text-xs font-medium">
+            <TabsTrigger value="circuits" className="gap-2 text-xs font-medium whitespace-nowrap">
               <Cpu className="h-3.5 w-3.5" />
               <span>Circuit Breakers</span>
             </TabsTrigger>
-            <TabsTrigger value="apikeys" className="gap-2 text-xs font-medium">
+            <TabsTrigger value="ratelimits" className="gap-2 text-xs font-medium whitespace-nowrap">
+              <Gauge className="h-3.5 w-3.5" />
+              <span>Rate Limits</span>
+            </TabsTrigger>
+            <TabsTrigger value="apikeys" className="gap-2 text-xs font-medium whitespace-nowrap">
               <Code2 className="h-3.5 w-3.5" />
               <span>API Gateway SDK</span>
             </TabsTrigger>
@@ -461,7 +466,8 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
         {/* TAB 1: Tenants List Table */}
         <TabsContent value="tenants" className="m-0 space-y-4">
           <Card className="border-border/70 overflow-hidden shadow-sm bg-card/60 backdrop-blur-sm">
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent bg-muted/20">
                   <TableHead className="text-xs">Tenant Site</TableHead>
@@ -630,6 +636,7 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                 )}
               </TableBody>
             </Table>
+            </div>
           </Card>
         </TabsContent>
 
@@ -647,7 +654,8 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                 Showing last {stats.recentLogs.length} events
               </span>
             </div>
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow className="bg-muted/20">
                   <TableHead className="text-xs">Time</TableHead>
@@ -725,6 +733,7 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                 )}
               </TableBody>
             </Table>
+            </div>
           </Card>
         </TabsContent>
 
@@ -867,6 +876,177 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
               </div>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* TAB: Rate Limits & Burst Protection Monitor */}
+        <TabsContent value="ratelimits" className="m-0 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-border/70 bg-card/60 backdrop-blur-sm p-4 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Tenant Burst Cap
+                </span>
+                <Badge variant="outline" className="text-[10px] font-mono text-emerald-400 border-emerald-500/30">
+                  SLIDING WINDOW
+                </Badge>
+              </div>
+              <div className="text-2xl font-black text-foreground font-mono">
+                5 <span className="text-sm font-normal text-muted-foreground">reqs / min</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Per-tenant rate limit threshold preventing noisy neighbor starvation.
+              </p>
+            </Card>
+
+            <Card className="border-border/70 bg-card/60 backdrop-blur-sm p-4 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Starvation Protection
+                </span>
+                <Badge variant="outline" className="text-[10px] font-mono text-cyan-400 border-cyan-500/30">
+                  ISOLATED
+                </Badge>
+              </div>
+              <div className="text-2xl font-black text-foreground font-mono">
+                100% <span className="text-sm font-normal text-muted-foreground">Fair-Share</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A single tenant spike never degrades response times for other tenants.
+              </p>
+            </Card>
+
+            <Card className="border-border/70 bg-card/60 backdrop-blur-sm p-4 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quota Protection
+                </span>
+                <Badge variant="outline" className="text-[10px] font-mono text-amber-400 border-amber-500/30">
+                  ATOMIC
+                </Badge>
+              </div>
+              <div className="text-2xl font-black text-foreground font-mono">
+                Auto-Rollback
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Rate-limited 429 requests immediately release reserved quota slots.
+              </p>
+            </Card>
+          </div>
+
+          <Card className="border-border/70 p-6 bg-card/60 backdrop-blur-sm space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Gauge className="h-4 w-4 text-emerald-400" />
+                Rate Limiting Protocol &amp; HTTP Response Contract
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Standard headers returned by the API gateway on all requests to ensure predictable client-side backoff.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <div className="rounded-xl border border-border/60 bg-background/50 p-4 space-y-2 text-xs">
+                <div className="font-semibold text-foreground flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  Successful Request Headers
+                </div>
+                <div className="space-y-1 font-mono text-[11px] text-muted-foreground">
+                  <div className="flex justify-between p-1.5 rounded bg-muted/30">
+                    <span className="text-indigo-300">X-RateLimit-Limit:</span>
+                    <span className="text-foreground">5</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 rounded bg-muted/30">
+                    <span className="text-indigo-300">X-RateLimit-Remaining:</span>
+                    <span className="text-foreground">&lt;remaining_count&gt;</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 rounded bg-muted/30">
+                    <span className="text-indigo-300">X-RateLimit-Reset:</span>
+                    <span className="text-foreground">&lt;unix_timestamp&gt;</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2 text-xs">
+                <div className="font-semibold text-amber-300 flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  429 Too Many Requests Headers
+                </div>
+                <div className="space-y-1 font-mono text-[11px] text-muted-foreground">
+                  <div className="flex justify-between p-1.5 rounded bg-amber-500/10 text-amber-200">
+                    <span>HTTP Status:</span>
+                    <span className="font-bold">429 Too Many Requests</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 rounded bg-amber-500/10 text-amber-200">
+                    <span>Retry-After:</span>
+                    <span className="font-bold">60 (seconds)</span>
+                  </div>
+                  <div className="flex justify-between p-1.5 rounded bg-amber-500/10 text-amber-200">
+                    <span>Quota Impact:</span>
+                    <span className="font-bold">0 (Slot Released)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Tenant Live Quotas Status */}
+          <Card className="border-border/70 overflow-hidden shadow-sm bg-card/60 backdrop-blur-sm">
+            <div className="p-3 bg-muted/20 border-b border-border/60 flex items-center justify-between">
+              <span className="text-xs font-semibold text-foreground">
+                Active Tenant Quota &amp; Rate Consumption
+              </span>
+              <span className="text-[11px] text-muted-foreground font-mono">
+                {profiles.length} registered tenants
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20">
+                    <TableHead className="text-xs">Tenant Site</TableHead>
+                    <TableHead className="text-xs">Monthly Quota</TableHead>
+                    <TableHead className="text-xs">Rate Threshold</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-right text-xs">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {profiles.map((p) => {
+                    const pct = Math.min(100, Math.round(((p.used_quota || 0) / (p.monthly_quota || 1)) * 100));
+                    return (
+                      <TableRow key={p.id} className="text-xs">
+                        <TableCell className="font-medium text-foreground">
+                          <div>{p.site_name}</div>
+                          <div className="text-[10px] text-muted-foreground font-mono">{p.domain}</div>
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          {p.used_quota || 0} / {p.monthly_quota} ({pct}%)
+                        </TableCell>
+                        <TableCell className="font-mono text-emerald-400">
+                          5 RPM Cap
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={p.is_active ? "success" : "secondary"} className="text-[10px]">
+                            {p.is_active ? "Passing" : "Suspended"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-indigo-400 hover:text-indigo-300"
+                            onClick={() => handleOpenQuotaModal(p)}
+                          >
+                            Adjust
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         </TabsContent>
 
         {/* TAB 5: Developer API Keys & SDK Docs */}

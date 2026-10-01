@@ -12,6 +12,7 @@ import { UsageGraphsTab } from "@/components/dashboard/UsageGraphsTab";
 import { RequestLogsTab } from "@/components/dashboard/RequestLogsTab";
 import { WebhooksTab } from "@/components/dashboard/WebhooksTab";
 import { BillingTab } from "@/components/dashboard/BillingTab";
+import { BrandSettingsTab } from "@/components/dashboard/BrandSettingsTab";
 import { KeyRevealModal } from "@/components/dashboard/KeyRevealModal";
 import { generateTenantApiKeyAction, type UserSiteSummary } from "@/lib/serverActions";
 import type { SafeSiteProfile } from "@/lib/sanitize";
@@ -56,7 +57,7 @@ export function TenantDashboardClient({
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get("tab") as DashboardTab;
-      if (tabParam && ["developer", "api-playground", "ai-engines", "api-docs", "webhooks", "usage-graphs", "request-logs", "billing"].includes(tabParam)) {
+      if (tabParam && ["brand", "developer", "api-playground", "ai-engines", "api-docs", "webhooks", "usage-graphs", "request-logs", "billing"].includes(tabParam)) {
         setCurrentTab(tabParam as DashboardTab);
       }
       if (params.get("upgrade") === "success") {
@@ -133,6 +134,13 @@ export function TenantDashboardClient({
 
         {/* Content Workspace Area */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+          {currentTab === "brand" && (
+            <BrandSettingsTab
+              profile={profile}
+              onProfileUpdated={handleProfileUpdated}
+            />
+          )}
+
           {currentTab === "developer" && (
             <DeveloperTab
               profile={profile}

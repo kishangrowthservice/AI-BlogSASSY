@@ -7,23 +7,37 @@ import {
   Sparkles,
   ChevronRight,
   Shield,
+  Menu,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  onOpenMobileMenu?: () => void
+}
+
+export function AdminHeader({ onOpenMobileMenu }: AdminHeaderProps) {
   return (
-    <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border/70 bg-background/80 px-6 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 flex h-14 w-full items-center justify-between border-b border-border/70 bg-background/80 px-4 sm:px-6 backdrop-blur-xl">
       {/* Breadcrumb path */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onOpenMobileMenu}
+          className="lg:hidden h-8 w-8 text-muted-foreground mr-1"
+          aria-label="Toggle navigation drawer"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
         <Link
           href="/admin"
-          className="hover:text-foreground font-medium transition-colors"
+          className="hover:text-foreground font-medium transition-colors hidden sm:inline"
         >
           Growth Service
         </Link>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 hidden sm:inline" />
         <span className="font-semibold text-foreground">Admin Console</span>
         <Badge
           variant="outline"

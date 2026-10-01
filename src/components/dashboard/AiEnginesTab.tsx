@@ -468,7 +468,18 @@ export function AiEnginesTab({ profile, logs = [] }: AiEnginesTabProps) {
           {/* Groq Key Input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-foreground">Groq API Key (Optional)</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-foreground">Groq API Key (Optional)</label>
+                {profile.has_byo_groq ? (
+                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10 text-[10px] py-0 px-1.5 font-mono">
+                    ● Custom Key Active
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground border-border text-[10px] py-0 px-1.5">
+                    Platform Key
+                  </Badge>
+                )}
+              </div>
               <a
                 href="https://console.groq.com/keys"
                 target="_blank"
@@ -482,7 +493,7 @@ export function AiEnginesTab({ profile, logs = [] }: AiEnginesTabProps) {
             <div className="relative">
               <Input
                 type={showGroqKey ? "text" : "password"}
-                placeholder="gsk_••••••••••••••••••••••••••••••••"
+                placeholder={profile.has_byo_groq ? "•••••••••••••••• (Configured — enter new key to replace)" : "gsk_••••••••••••••••••••••••••••••••"}
                 value={byoGroq}
                 onChange={(e) => setByoGroq(e.target.value)}
                 className="bg-background/80 font-mono text-xs pr-10"
@@ -500,7 +511,18 @@ export function AiEnginesTab({ profile, logs = [] }: AiEnginesTabProps) {
           {/* Gemini Key Input */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-foreground">Google Gemini API Key (Optional)</label>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-foreground">Google Gemini API Key (Optional)</label>
+                {profile.has_byo_gemini ? (
+                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10 text-[10px] py-0 px-1.5 font-mono">
+                    ● Custom Key Active
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground border-border text-[10px] py-0 px-1.5">
+                    Platform Key
+                  </Badge>
+                )}
+              </div>
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
@@ -514,7 +536,7 @@ export function AiEnginesTab({ profile, logs = [] }: AiEnginesTabProps) {
             <div className="relative">
               <Input
                 type={showGeminiKey ? "text" : "password"}
-                placeholder="AIzaSy••••••••••••••••••••••••••••••"
+                placeholder={profile.has_byo_gemini ? "•••••••••••••••• (Configured — enter new key to replace)" : "AIzaSy••••••••••••••••••••••••••••••"}
                 value={byoGemini}
                 onChange={(e) => setByoGemini(e.target.value)}
                 className="bg-background/80 font-mono text-xs pr-10"

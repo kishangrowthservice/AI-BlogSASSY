@@ -13,6 +13,7 @@ import {
   List,
   Zap,
   Webhook,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -20,6 +21,7 @@ import type { SafeSiteProfile } from "@/lib/sanitize";
 import { getPlanTier } from "@/lib/billing";
 
 export type DashboardTab =
+  | "brand"
   | "developer"
   | "api-playground"
   | "ai-engines"
@@ -63,6 +65,16 @@ export function DashboardSidebar({
   );
 
   const sections: NavSection[] = [
+    {
+      title: "Content & Brand",
+      items: [
+        {
+          id: "brand",
+          label: "Brand Voice & SEO",
+          icon: Sparkles,
+        },
+      ],
+    },
     {
       title: "Monitoring",
       items: [
