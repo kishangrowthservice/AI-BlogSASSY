@@ -38,7 +38,7 @@ npm install
 Connect to your Supabase project (via the [Supabase Dashboard SQL Editor](https://supabase.com/dashboard) or the Supabase CLI):
 
 - **Option A (Consolidated Schema)**: Execute the entire schema in one pass by running `supabase/full_schema.sql` in the SQL Editor.
-- **Option B (Sequential Migrations)**: Execute the migration files located in `supabase/migrations/` in numerical order from `001` through `016`.
+- **Option B (Sequential Migrations)**: Execute the migration files located in `supabase/migrations/` in numerical order from `001` through `018`.
 
 ### 3. Run the Development Server
 ```bash
@@ -64,6 +64,8 @@ Navigate to [http://localhost:3000](http://localhost:3000) to view the applicati
 - `014_comprehensive_rls_policies.sql`: Extends RLS with strict `UPDATE` and `INSERT` policies on `site_profiles` and tenant-scoped `SELECT` policy on `generation_logs`.
 - `015_billing_and_multi_site.sql`: Adds Stripe customer/subscription tracking, plan tiers (`starter`, `pro`, `agency`), and outbound CMS webhook URLs to `site_profiles`.
 - `016_add_content_to_generation_logs.sql`: Adds `content TEXT`, `meta_description TEXT`, and `suggested_tags TEXT[]` to `generation_logs` to enable full article inspection, instant copying, and outbound CMS webhook deliveries.
+- `017_crawler_and_brand_intelligence.sql`: Adds background crawler progress, page count, and status tracking columns to `site_profiles`.
+- `018_fix_quota_reservation_rpc.sql`: Fixes PL/pgSQL ambiguous column reference on `used_quota` inside `reserve_tenant_quota` stored procedure.
 
 ## Known Limitations
 
