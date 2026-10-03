@@ -13,6 +13,8 @@
     "verify:api": "tsx scripts/verify_api_end_to_end.ts",
     "verify:prod": "tsx scripts/verify_production_api_audit.ts",
     "test:auth": "tsx scripts/test-authorization.ts",
+    "db:migrate": "tsx scripts/apply_all_migrations.ts",
+    "db:inspect": "tsx scripts/inspect_db.ts",
     "test": "npm run typecheck && npm run verify:auth && npm run verify:saas && npm run verify:api"
   },
   "dependencies": {
