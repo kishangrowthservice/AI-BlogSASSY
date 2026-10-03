@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import type { GenerationLog } from "@/lib/types";
 import type { SafeSiteProfile } from "@/lib/sanitize";
 import type { ObservabilityStats } from "@/lib/adminActions";
-import { onboardTenantAction, toggleTenantStatus, adminUpdateTenantQuotaAction } from "@/lib/serverActions";
+import { onboardTenantAction, toggleTenantStatus, adminUpdateTenantQuotaAction, generateTenantApiKeyAction } from "@/lib/serverActions";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -253,6 +253,28 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
       setProfiles(
         profiles.map((p) => (p.id === profile.id ? { ...p, is_active: updatedStatus } : p))
       );
+    }
+  };
+
+  const [isRotatingKeyId, setIsRotatingKeyId] = useState<string | null>(null);
+
+  const handleGenerateKeyForTenant = async (profile: SafeSiteProfile) => {
+    setIsRotatingKeyId(profile.id);
+    try {
+      const res = await generateTenantApiKeyAction(profile.id);
+      if (res.success && res.rawApiKey && res.keyPrefix) {
+        setGeneratedKey(res.rawApiKey);
+        setNewlyOnboardedSite(profile.site_name);
+        setProfiles((prev) =>
+          prev.map((p) => (p.id === profile.id ? { ...p, key_prefix: res.keyPrefix } : p))
+        );
+      } else {
+        alert(res.error || "Failed to generate API key");
+      }
+    } catch (err: any) {
+      alert(err?.message || "Failed to generate API key");
+    } finally {
+      setIsRotatingKeyId(null);
     }
   };
 
@@ -523,6 +545,19 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                                   </Badge>
                                 )}
                               </div>
+                              <div className="mt-1 flex items-center gap-1">
+                                {profile.key_prefix ? (
+                                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                                    <Key className="h-2.5 w-2.5" />
+                                    {profile.key_prefix}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-amber-400/90 font-mono flex items-center gap-1">
+                                    <Key className="h-2.5 w-2.5" />
+                                    No key generated yet
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
@@ -604,10 +639,18 @@ export function AdminDashboardClient({ initialProfiles, stats }: Props) {
                                 Copy Tenant ID
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                onClick={() => handleGenerateKeyForTenant(profile)}
+                                disabled={isRotatingKeyId === profile.id}
+                                className="gap-2 cursor-pointer text-amber-400 font-medium"
+                              >
+                                <Key className="h-3.5 w-3.5" />
+                                {profile.key_prefix ? "Rotate API Key" : "Generate API Key"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 onClick={() => copyToClipboard(profile.key_prefix || "No key generated")}
                                 className="gap-2 cursor-pointer"
                               >
-                                <Key className="h-3.5 w-3.5" />
+                                <Copy className="h-3.5 w-3.5" />
                                 Copy Key Prefix
                               </DropdownMenuItem>
                               <DropdownMenuItem

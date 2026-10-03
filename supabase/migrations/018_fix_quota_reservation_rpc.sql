@@ -1,9 +1,5 @@
 -- =====================================================================
--- Migration 012: Atomic Quota Reservation & Release RPCs
--- SYSTEM_DESIGN.md §8 & PHASE4.md Task 1
---
--- Closes quota race condition under concurrent bursts via atomic
--- reserve-then-release functions.
+-- Migration 018: Fix Ambiguous Column Reference in reserve_tenant_quota
 -- =====================================================================
 
 CREATE OR REPLACE FUNCTION reserve_tenant_quota(p_site_id UUID)
@@ -23,12 +19,5 @@ BEGIN
     SELECT s.used_quota, s.monthly_quota INTO v_used, v_limit FROM site_profiles s WHERE s.id = p_site_id;
     RETURN QUERY SELECT false, v_used, v_limit;
   END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION release_tenant_quota(p_site_id UUID)
-RETURNS VOID AS $$
-BEGIN
-  UPDATE site_profiles SET used_quota = GREATEST(used_quota - 1, 0) WHERE id = p_site_id;
 END;
 $$ LANGUAGE plpgsql;

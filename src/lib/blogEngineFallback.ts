@@ -185,7 +185,7 @@ export async function generateBlogPostResilient(
 ): Promise<GeneratedBlogPostWithTelemetry> {
   const prompt = buildBlogPostPrompt(siteProfile, params);
   const groqModel = params.model || siteProfile.groq_model || "openai/gpt-oss-120b";
-  const geminiModel = siteProfile.gemini_model || "gemini-3.1-pro-preview";
+  const geminiModel = siteProfile.gemini_model || "gemini-3.1-flash-lite";
 
   // Support explicit Gemini fallback or default provider override
   const preferGemini =

@@ -20,7 +20,12 @@ export async function GET(
   context: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    let rawApiKey = request.headers.get("x-api-key");
+    // 1. Authenticate via x-api-key, apikey, Authorization Bearer header, or query parameters
+    let rawApiKey =
+      request.headers.get("x-api-key") ||
+      request.headers.get("apikey") ||
+      request.headers.get("api-key");
+
     if (!rawApiKey || !rawApiKey.trim()) {
       const authHeader = request.headers.get("authorization");
       if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
@@ -28,9 +33,34 @@ export async function GET(
       }
     }
 
+    // Support query param ?apiKey=... or ?api_key=... for integrations
+    if (!rawApiKey || !rawApiKey.trim()) {
+      try {
+        const url = new URL(request.url);
+        rawApiKey = url.searchParams.get("apiKey") || url.searchParams.get("api_key");
+      } catch {
+        // Ignore URL parsing errors
+      }
+    }
+
+    // Strip leading/trailing whitespace and surrounding single or double quotes
+    if (rawApiKey) {
+      rawApiKey = rawApiKey.trim().replace(/^["']|["']$/g, "").trim();
+    }
+
     if (!rawApiKey || !rawApiKey.trim()) {
       return NextResponse.json(
         { error: "Missing API key. Provide via 'x-api-key' header or 'Authorization: Bearer <key>'." },
+        { status: 401 }
+      );
+    }
+
+    if (rawApiKey.includes("••••") || rawApiKey.includes("...")) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid API key format: you passed a masked key prefix (e.g. 'gs_live_••••...'). Please supply your full 48-character raw secret API key (starts with 'gs_live_') generated in your dashboard or provided by your admin.",
+        },
         { status: 401 }
       );
     }

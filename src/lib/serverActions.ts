@@ -3,7 +3,7 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { getDbClient, hashApiKey, localSiteProfiles, reserveTenantQuota, releaseTenantQuota, recordGenerationLog } from "./db";
+import { getDbClient, hashApiKey, localSiteProfiles, reserveTenantQuota, releaseTenantQuota, recordGenerationLog, invalidateProfileCache } from "./db";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { generateBlogPostResilient } from "./blogEngineFallback";
 import { dispatchCmsWebhook, computeWebhookSignature } from "./webhookDispatcher";
@@ -101,11 +101,13 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
 
     const rawApiKey = createRawKey();
     const hashed = hashApiKey(rawApiKey);
+    const keyPrefix = `gs_live_••••${rawApiKey.slice(-4)}`;
 
     const payload = {
       site_name: input.site_name.trim(),
       domain: input.domain.trim().toLowerCase().replace(/^https?:\/\//, ""),
       api_key_hash: hashed,
+      key_prefix: keyPrefix,
       is_active: true,
       brand_knowledge: input.brand_knowledge.trim(),
       tone: input.tone?.trim() || "authoritative, actionable, high-conviction",
@@ -114,7 +116,7 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
       monthly_quota: input.monthly_quota && input.monthly_quota > 0 ? input.monthly_quota : 100,
       used_quota: 0,
       groq_model: input.groq_model || "openai/gpt-oss-120b",
-      gemini_model: input.gemini_model || "gemini-3.1-pro-preview",
+      gemini_model: input.gemini_model || "gemini-3.1-flash-lite",
       byo_groq_api_key: input.byo_groq_api_key?.trim() || undefined,
       byo_gemini_api_key: input.byo_gemini_api_key?.trim() || undefined,
     };
@@ -128,24 +130,26 @@ export async function onboardTenantAction(input: OnboardTenantInput): Promise<On
         .select("*")
         .single();
 
-      if (!error && data) {
+      if (error) {
+        console.error("[serverActions] onboardTenant DB error:", error);
+        return { success: false, error: error.message || "Failed to persist tenant profile in database" };
+      }
+
+      if (data) {
         profile = data as SiteProfile;
       }
-    } catch {
-      // Remote DB not migrated or offline
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Database connection failed";
+      console.error("[serverActions] onboardTenant exception:", err);
+      return { success: false, error: msg };
     }
 
     if (!profile) {
-      const mockId = crypto.randomUUID();
-      profile = {
-        id: mockId,
-        ...payload,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as SiteProfile;
+      return { success: false, error: "Failed to create tenant profile" };
     }
 
     localSiteProfiles.set(profile.id, profile);
+    invalidateProfileCache();
 
     return {
       success: true,
@@ -203,6 +207,7 @@ export async function updateTenantByoKeys(
     return false;
   }
 
+  let dbSuccess = false;
   try {
     const supabase = getDbClient();
     const updates: Record<string, string | null> = {};
@@ -214,7 +219,7 @@ export async function updateTenantByoKeys(
       .update(updates)
       .eq("id", siteId);
 
-    if (!error) return true;
+    if (!error) dbSuccess = true;
   } catch {
     // Remote update fallback
   }
@@ -226,7 +231,7 @@ export async function updateTenantByoKeys(
     return true;
   }
 
-  return true;
+  return dbSuccess;
 }
 
 /**
@@ -336,7 +341,7 @@ export async function selfServeOnboardAction(input: SelfServeOnboardInput): Prom
       monthly_quota: 25, // Starter free quota
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-3.1-pro-preview",
+      gemini_model: "gemini-3.1-flash-lite",
     };
 
     const supabase = getDbClient();
@@ -448,7 +453,7 @@ export async function startSiteOnboardUrlAction(input: {
       monthly_quota: monthlyQuota,
       used_quota: 0,
       groq_model: "openai/gpt-oss-120b",
-      gemini_model: "gemini-3.1-pro-preview",
+      gemini_model: "gemini-3.1-flash-lite",
       plan_tier: selectedPlan,
       crawl_status: "in_progress",
       crawl_progress: 10,
@@ -670,15 +675,24 @@ export async function generateTenantApiKeyAction(siteId: string): Promise<Genera
 
       if (error) {
         // Fallback: update api_key_hash if key_prefix column not yet added to remote DB
-        await supabase
+        const { error: fallbackErr } = await supabase
           .from("site_profiles")
           .update({
             api_key_hash: hashed,
           })
           .eq("id", siteId);
+
+        if (fallbackErr) {
+          console.error("[generateTenantApiKeyAction] DB error:", fallbackErr);
+          return {
+            success: false,
+            error: "Failed to persist generated API key in database: " + fallbackErr.message,
+          };
+        }
       }
-    } catch {
-      // Remote DB fallback
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Database connection failure";
+      return { success: false, error: msg };
     }
 
     // Update local memory profile if present
@@ -687,6 +701,8 @@ export async function generateTenantApiKeyAction(siteId: string): Promise<Genera
       local.api_key_hash = hashed;
       local.key_prefix = keyPrefix;
     }
+
+    invalidateProfileCache();
 
     return {
       success: true,
