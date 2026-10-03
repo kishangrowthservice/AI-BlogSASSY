@@ -37,52 +37,62 @@ export function DeveloperTab({
 }: DeveloperTabProps) {
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
 
-  const activeKeySample = keyPrefix ? `${keyPrefix}••••••••••••••••••••••••` : "ak_live_your_secret_api_key";
+  const activeKeySample = "YOUR_RAW_SECRET_KEY";
 
   const curlSnippet = `curl -X POST "${apiOrigin}/api/generate-blog" \\
-  -H "Authorization: Bearer ${activeKeySample}" \\
   -H "Content-Type: application/json" \\
+  -H "x-api-key: ${activeKeySample}" \\
   -d '{
     "topic": "10 High-Impact Ways Modern Businesses Scale Organic Traffic",
-    "targetKeywords": ["SEO growth", "content marketing", "b2b pipeline"],
-    "wordCount": 1200,
-    "sync": true
+    "keywords": ["SEO growth", "content marketing", "b2b pipeline"],
+    "wordCount": 1200
   }'`;
 
-  const nodeSnippet = `import { BlogClient } from "@growthservice/blog-client";
-
-const client = new BlogClient({
-  apiKey: "${activeKeySample}",
-  endpoint: "${apiOrigin}"
+  const nodeSnippet = `// Next.js / TypeScript / Node.js 18+ (Zero External Dependencies)
+const response = await fetch("${apiOrigin}/api/generate-blog", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": process.env.AI_BLOG_API_KEY || "${activeKeySample}",
+  },
+  body: JSON.stringify({
+    topic: "10 High-Impact Ways Modern Businesses Scale Organic Traffic",
+    keywords: ["SEO growth", "content marketing"],
+    wordCount: 1200,
+  }),
 });
 
-// Publishes SEO blog directly
-const post = await client.generateBlog({
-  topic: "10 High-Impact Ways Modern Businesses Scale Organic Traffic",
-  targetKeywords: ["SEO growth", "content marketing"],
-  wordCount: 1200
-});
+if (!response.ok) {
+  throw new Error("Failed to generate article: " + response.statusText);
+}
 
-console.log("Published Title:", post.title);
-console.log("Meta Description:", post.metaDescription);`;
+const data = await response.json();
+console.log("Title:       ", data.title);
+console.log("Slug:        ", data.slug);
+console.log("Reading Time:", data.readingTime);
+console.log("HTML Content:", data.content);`;
 
-  const pythonSnippet = `import requests
+  const pythonSnippet = `import os
+import requests
 
 url = "${apiOrigin}/api/generate-blog"
 headers = {
-    "Authorization": "Bearer ${activeKeySample}",
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "x-api-key": os.getenv("AI_BLOG_API_KEY", "${activeKeySample}"),
 }
 payload = {
     "topic": "10 High-Impact Ways Modern Businesses Scale Organic Traffic",
-    "targetKeywords": ["SEO growth", "content marketing"],
+    "keywords": ["SEO growth", "content marketing"],
     "wordCount": 1200,
-    "sync": True
 }
 
 response = requests.post(url, json=payload, headers=headers)
-post = response.json()
-print("Generated Article:", post["title"])`;
+data = response.json()
+
+print("Title:       ", data["title"])
+print("Slug:        ", data["slug"])
+print("Reading Time:", data["readingTime"])
+print("Tags:        ", data["tags"])`;
 
   const handleCopy = (code: string, id: string) => {
     navigator.clipboard.writeText(code);
