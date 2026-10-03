@@ -200,7 +200,40 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json(post, { status: 200, headers: corsHeaders });
+    // 7. Enrich response with slug, reading time, snake_case aliases, and telemetry
+    const slug = post.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    const plainText = post.content.replace(/<[^>]*>/g, " ");
+    const words = plainText.trim().split(/\s+/).filter(Boolean);
+    const contentWordCount = words.length;
+    const readingTimeMinutes = Math.max(1, Math.ceil(contentWordCount / 200));
+
+    const enrichedPost = {
+      ...post,
+      slug,
+      meta_description: post.metaDescription,
+      suggested_tags: post.suggestedTags,
+      tags: post.suggestedTags,
+      word_count: contentWordCount,
+      wordCount: contentWordCount,
+      reading_time_minutes: readingTimeMinutes,
+      readingTime: `${readingTimeMinutes} min read`,
+      telemetry: {
+        provider: telemetry.provider_used,
+        model: telemetry.model,
+        latency_ms: telemetry.latency_ms,
+        tokens: {
+          prompt: telemetry.prompt_tokens,
+          completion: telemetry.completion_tokens,
+          total: telemetry.total_tokens,
+        },
+      },
+    };
+
+    return NextResponse.json(enrichedPost, { status: 200, headers: corsHeaders });
   } catch (err: unknown) {
     if (quotaReserved) {
       await releaseTenantQuota(siteProfile!.id).catch(() => {});
