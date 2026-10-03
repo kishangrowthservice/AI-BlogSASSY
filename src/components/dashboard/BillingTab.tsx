@@ -82,6 +82,22 @@ export function BillingTab({ profile }: BillingTabProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
+      {/* 100% Free Production Banner */}
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-indigo-500/15 border border-emerald-500/30 text-emerald-200">
+        <Sparkles className="h-5 w-5 text-emerald-400 shrink-0" />
+        <div className="text-xs space-y-0.5">
+          <p className="font-bold text-sm text-foreground flex items-center gap-2">
+            100% Free Public Beta in Production
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold uppercase">
+              No Credit Card Required
+            </span>
+          </p>
+          <p className="text-muted-foreground">
+            All plan tiers, priority queue processing, and monthly article quotas are currently completely free. Switch tiers freely to scale your blog operations.
+          </p>
+        </div>
+      </div>
+
       {billingError && (
         <div className="flex items-center gap-2.5 text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 p-3.5 rounded-xl">
           <ShieldCheck className="h-4 w-4 text-rose-400 shrink-0" />
@@ -96,7 +112,7 @@ export function BillingTab({ profile }: BillingTabProps) {
             Billing &amp; Subscription Plans
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Manage your monthly article capacity, upgrade tier, or view invoices via Stripe.
+            Manage your monthly article capacity and switch tiers during our free public beta.
           </p>
         </div>
 
@@ -123,7 +139,7 @@ export function BillingTab({ profile }: BillingTabProps) {
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg font-bold">Current Subscription: {currentPlan.name}</CardTitle>
                 <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/5">
-                  ● ACTIVE
+                  ● ACTIVE (FREE)
                 </Badge>
               </div>
               <CardDescription className="text-xs mt-1">
@@ -133,9 +149,9 @@ export function BillingTab({ profile }: BillingTabProps) {
 
             <div className="flex items-baseline gap-1">
               <span className="text-3xl font-black text-foreground font-mono">
-                ${currentPlan.priceMonthly}
+                $0
               </span>
-              <span className="text-xs text-muted-foreground">/ month</span>
+              <span className="text-xs text-emerald-400 font-semibold ml-1.5">Free in Beta</span>
             </div>
           </div>
         </CardHeader>
@@ -207,11 +223,19 @@ export function BillingTab({ profile }: BillingTabProps) {
                     )}
                   </div>
                   <CardDescription className="text-xs min-h-[30px]">{plan.description}</CardDescription>
-                  <div className="mt-4 flex items-baseline">
+                  <div className="mt-4 flex items-baseline gap-2">
                     <span className="text-3xl font-black text-foreground font-mono">
-                      ${plan.priceMonthly}
+                      $0
                     </span>
-                    <span className="text-xs text-muted-foreground ml-1.5">/ month</span>
+                    <span className="text-xs text-muted-foreground">/ month</span>
+                    {plan.priceMonthly > 0 && (
+                      <span className="text-xs text-muted-foreground/60 line-through">
+                        ${plan.priceMonthly}
+                      </span>
+                    )}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
+                      FREE
+                    </span>
                   </div>
                 </CardHeader>
 
@@ -249,11 +273,11 @@ export function BillingTab({ profile }: BillingTabProps) {
                       {isUpgrading ? (
                         <>
                           <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                          Redirecting to Stripe...
+                          Activating Free Tier...
                         </>
                       ) : (
                         <>
-                          Upgrade to {plan.name}
+                          Switch to {plan.name} (Free)
                           <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                         </>
                       )}

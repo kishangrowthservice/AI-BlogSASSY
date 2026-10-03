@@ -1,4 +1,4 @@
-import { getDbClient, localSiteProfiles } from "./db";
+import { getDbClient, localSiteProfiles, invalidateProfileCache } from "./db";
 import type { SiteProfile } from "./types";
 
 export interface PlanTierConfig {
@@ -128,6 +128,9 @@ export async function updateTenantSubscription(
     if (options?.stripeCustomerId) local.stripe_customer_id = options.stripeCustomerId;
     if (options?.stripeSubscriptionId !== undefined) local.stripe_subscription_id = options.stripeSubscriptionId;
   }
+
+  // Invalidate any cached profile reads
+  invalidateProfileCache(siteId);
 
   return { success: true, newQuota };
 }
